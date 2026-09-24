@@ -1,0 +1,41 @@
+appId: io.github.manboyx.texttoone
+productName: Text to One
+copyright: Copyright © 2026 ManBoyx
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**
+  - package.json
+electronLanguages:
+  - fr
+fileAssociations:
+  - ext: tto
+    name: Document Text to One
+    description: Document Text to One
+    role: Editor
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: zip
+      arch: [x64]
+  icon: build/icon.png
+  artifactName: Text-to-One-${version}-Windows.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  language: '1036'
+  artifactName: Text-to-One-Installation-${version}.${ext}
+linux:
+  target: [AppImage, deb]
+  category: Office
+  syncDesktopName: true
+  icon: build/icon.png
+  synopsis: Traitement de texte libre
+  description: Text to One est un traitement de texte libre, avec import et export Word et PDF.
+appImage:
+  artifactName: Text-to-One-${version}.${ext}
+deb:
+  artifactName: text-to-one_${version}_${arch}.${ext}
