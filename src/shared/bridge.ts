@@ -1,0 +1,85 @@
+import type { SaveKind } from './kinds';
+
+export interface OpenedFile {
+  path: string;
+  name: string;
+  bytes: Uint8Array;
+}
+
+export type OpenOutcome =
+  | { status: 'opened'; file: OpenedFile }
+  | { status: 'cancelled' }
+  | { status: 'error'; message: string };
+
+export interface SaveRequest {
+  /** Chemin déjà connu du document, ou null pour demander où l'enregistrer. */
+  path: string | null;
+  suggestedName: string;
+  kind: SaveKind;
+  bytes: Uint8Array;
+}
+
+export type SaveOutcome =
+  | { status: 'saved'; path: string; name: string }
+  | { status: 'cancelled' }
+  | { status: 'error'; message: string };
+
+export interface RecentEntry {
+  path: string;
+  name: string;
+}
+
+/** Ce que la fenêtre dit d'elle-même au processus principal : titre, fermeture, récupération. */
+export interface WindowState {
+  id: string;
+  name: string;
+  dirty: boolean;
+  path: string | null;
+}
+
+/** Ce que le processus principal demande d'afficher dans une fenêtre. */
+export type InitialRequest =
+  | { type: 'new' }
+  | { type: 'file'; file: OpenedFile }
+  | { type: 'recovered'; id: string; name: string; bytes: Uint8Array };
+
+/** Les actions envoyées par les menus natifs à la fenêtre. */
+export const MENU_ACTIONS = [
+  'file:save', 'file:save-as', 'file:export-docx', 'file:export-html', 'file:export-txt', 'file:export-md', 'file:export-pdf',
+  'edit:undo', 'edit:redo', 'edit:find', 'edit:replace',
+  'insert:image', 'insert:table', 'insert:link', 'insert:hr', 'insert:page-break',
+  'format:bold', 'format:italic', 'format:underline', 'format:strike', 'format:superscript', 'format:subscript',
+  'format:align-left', 'format:align-center', 'format:align-right', 'format:align-justify',
+  'format:bullet-list', 'format:ordered-list', 'format:task-list', 'format:blockquote', 'format:clear',
+  'view:zoom-in', 'view:zoom-out', 'view:zoom-reset', 'view:theme-light', 'view:theme-dark', 'view:theme-system',
+  'app:save-and-close',
+] as const;
+
+export type MenuAction = (typeof MENU_ACTIONS)[number];
+
+export function isMenuAction(valeur: unknown): valeur is MenuAction {
+  return typeof valeur === 'string' && (MENU_ACTIONS as readonly string[]).includes(valeur);
+}
+
+/** Le pont préchargé : tout ce que l'interface peut demander au processus principal, rien d'autre. */
+export interface Bridge {
+  init(): Promise<InitialRequest | null>;
+  openDialog(): Promise<OpenOutcome>;
+  readRecent(path: string): Promise<OpenOutcome>;
+  save(request: SaveRequest): Promise<SaveOutcome>;
+  exportPdf(suggestedName: string): Promise<SaveOutcome>;
+  listRecents(): Promise<RecentEntry[]>;
+  setWindowState(state: WindowState): void;
+  writeRecovery(id: string, name: string, bytes: Uint8Array): Promise<void>;
+  clearRecovery(id: string): Promise<void>;
+  closeWindow(): void;
+  openExternal(url: string): void;
+  onMenu(callback: (action: MenuAction) => void): void;
+  onOpenRequest(callback: (request: InitialRequest) => void): void;
+}
+
+declare global {
+  interface Window {
+    tto: Bridge;
+  }
+}
