@@ -9,6 +9,8 @@ async function ouvrirÉditeur(page: Page) {
 }
 
 const octetsDe = (adresse: string) => Buffer.from(adresse.split(',')[1], 'base64');
+/** Laisse passer deux images : le temps que l'éditeur prenne en compte une sélection faite au clavier. */
+const laisserLeNavigateurRéagir = (page: Page) => page.evaluate(() => new Promise((fin) => requestAnimationFrame(() => requestAnimationFrame(() => fin(null)))));
 /** Les vraies images du document : ProseMirror ajoute aussi une image « séparateur » invisible. */
 const IMAGES = '.ProseMirror img:not(.ProseMirror-separator)';
 
@@ -145,17 +147,24 @@ test.describe('éditeur', () => {
     await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.*/);
   });
 
-  test("les actions des menus fonctionnent : gras, saut de page, citation", async ({ page }) => {
+  test('les actions des menus fonctionnent : gras et citation', async ({ page }) => {
     await ouvrirÉditeur(page);
     const zone = page.locator('.ProseMirror');
     await zone.click();
     await page.keyboard.type('Texte');
     await page.keyboard.press('Control+A');
+    await laisserLeNavigateurRéagir(page); // l'éditeur apprend la nouvelle sélection un instant après la touche
     await envoyerMenu(page, 'format:bold');
     await envoyerMenu(page, 'format:blockquote');
-    await page.keyboard.press('End'); // referme la sélection : un saut de page remplace le texte sélectionné
+    await expect(zone.locator('blockquote strong')).toHaveText('Texte');
+  });
+
+  test('les actions des menus fonctionnent : saut de page, puis annuler', async ({ page }) => {
+    await ouvrirÉditeur(page);
+    const zone = page.locator('.ProseMirror');
+    await zone.click();
+    await page.keyboard.type('Texte');
     await envoyerMenu(page, 'insert:page-break');
-    await expect(zone.locator('blockquote strong')).toHaveCount(1);
     await expect(zone.locator('.page-break')).toHaveCount(1);
     await envoyerMenu(page, 'edit:undo');
     await expect(zone.locator('.page-break')).toHaveCount(0);
