@@ -1,0 +1,249 @@
+.editor-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.workspace {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px 16px 48px;
+}
+
+/* La feuille reste blanche dans tous les thèmes : ce qu'on voit est ce qui sera imprimé. */
+.sheet {
+  color-scheme: light; /* les cases à cocher et barres de défilement de la feuille restent claires, même en thème sombre */
+  --zoom: 1;
+  zoom: var(--zoom);
+  width: min(210mm, 100%);
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: clamp(20px, 10%, 25.4mm);
+  background: #ffffff;
+  color: #111111;
+  box-shadow: var(--shadow);
+}
+
+.document {
+  min-height: 240mm;
+  outline: none;
+  font-family: Arial, 'Liberation Sans', Helvetica, sans-serif;
+  font-size: 12pt;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.document p {
+  margin: 0 0 0.6em;
+}
+.document h1,
+.document h2,
+.document h3,
+.document h4,
+.document h5,
+.document h6 {
+  margin: 0.9em 0 0.4em;
+  line-height: 1.2;
+}
+.document h1 { font-size: 24pt; }
+.document h2 { font-size: 18pt; }
+.document h3 { font-size: 14pt; }
+.document h4 { font-size: 12pt; }
+.document h5 { font-size: 11pt; }
+.document h6 { font-size: 10pt; }
+.document ul,
+.document ol {
+  margin: 0 0 0.6em;
+  padding-left: 1.6em;
+}
+.document blockquote {
+  margin: 0 0 0.6em;
+  padding-left: 1em;
+  border-left: 3px solid #aab2c0;
+  color: #444a57;
+}
+.document pre {
+  margin: 0 0 0.6em;
+  padding: 0.6em 0.8em;
+  border-radius: 4px;
+  background: #f3f4f6;
+  font-family: 'Courier New', 'Liberation Mono', monospace;
+  font-size: 10pt;
+}
+.document code {
+  font-family: 'Courier New', 'Liberation Mono', monospace;
+}
+.document hr {
+  margin: 1em 0;
+  border: 0;
+  border-top: 1px solid #999;
+}
+.document a {
+  color: #0563c1;
+  text-decoration: underline;
+}
+.document mark {
+  color: inherit;
+}
+.document img {
+  max-width: 100%;
+  height: auto;
+  vertical-align: bottom;
+}
+.document img.ProseMirror-selectednode {
+  outline: 2px solid #2456d6;
+}
+
+.document table {
+  width: 100%;
+  margin: 0 0 0.6em;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.document td,
+.document th {
+  position: relative;
+  min-width: 1em;
+  padding: 4px 8px;
+  border: 1px solid #999;
+  vertical-align: top;
+}
+.document th {
+  background: #f2f2f2;
+  font-weight: 700;
+  text-align: left;
+}
+.document td p,
+.document th p {
+  margin: 0;
+}
+.document .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(36, 86, 214, 0.15);
+  pointer-events: none;
+}
+
+.document ul[data-type='taskList'] {
+  padding-left: 0;
+  list-style: none;
+}
+.document ul[data-type='taskList'] > li {
+  display: flex;
+  gap: 0.5em;
+  align-items: flex-start;
+}
+.document ul[data-type='taskList'] > li > label {
+  margin-top: 0.2em;
+}
+.document ul[data-type='taskList'] > li > div {
+  flex: 1;
+}
+
+.document .page-break {
+  position: relative;
+  height: 0;
+  margin: 22px 0;
+  border-top: 1px dashed #aab2c0;
+  break-after: page;
+}
+.document .page-break::after {
+  content: 'Saut de page';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  padding: 0 8px;
+  transform: translateX(-50%);
+  background: #ffffff;
+  color: #7c8798;
+  font: 11px var(--font-ui);
+}
+
+.search-match {
+  background: #ffe58f;
+  border-radius: 2px;
+}
+.search-match-current {
+  background: #ffb020;
+  outline: 1px solid #c77d00;
+}
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+}
+.status-zoom {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.zoom-label {
+  min-width: 52px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.zoom-label:hover {
+  background: var(--accent-soft);
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 20mm;
+  }
+  html,
+  body,
+  #app,
+  .editor-view,
+  .workspace {
+    height: auto;
+    overflow: visible;
+    background: #ffffff;
+  }
+  .toolbar,
+  .findbar,
+  .statusbar,
+  .toasts,
+  .popup,
+  dialog {
+    display: none !important;
+  }
+  .workspace {
+    padding: 0;
+  }
+  .sheet {
+    zoom: 1;
+    width: auto;
+    min-height: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+  .document {
+    min-height: 0;
+  }
+  .document .page-break {
+    margin: 0;
+    border: 0;
+  }
+  .document .page-break::after {
+    content: none;
+  }
+  .search-match,
+  .search-match-current {
+    background: none;
+    outline: none;
+  }
+}

@@ -1,0 +1,146 @@
+import type { Editor } from '@tiptap/core';
+import type { MenuAction } from '../../shared/bridge';
+import type { Notice } from '../document-controller';
+import { fr } from '../fr';
+import type { Theme } from '../ui/theme';
+
+/** Les actions que l'éditeur sait faire ; les menus natifs et la barre d'outils passent par les mêmes. */
+export type EditorAction = Extract<MenuAction, `edit:${string}` | `insert:${string}` | `format:${string}` | `view:${string}`>;
+
+export interface EditorUi {
+  askText(options: { title: string; label: string; value?: string }): Promise<string | null>;
+  pickImage(): Promise<string | null>;
+  openFind(remplacer: boolean): void;
+  zoom(changement: number | 'reset'): void;
+  setTheme(thème: Theme): void;
+  notify(notice: Notice): void;
+}
+
+/** Ajoute « https:// » quand il manque ; renvoie null si le protocole n'est pas autorisé. */
+export function normaliserAdresse(saisie: string): string | null {
+  const texte = saisie.trim();
+  if (/^(https?|mailto|tel):/i.test(texte)) return texte;
+  const avecProtocole = /^[a-z][a-z0-9+.-]*:/i.test(texte);
+  const hôtePort = /^[a-z0-9.-]+:\d+/i.test(texte); // « localhost:8080 » n'est pas un protocole
+  if (avecProtocole && !hôtePort) return null;
+  return `https://${texte}`;
+}
+
+async function basculerLien(éditeur: Editor, ui: EditorUi): Promise<void> {
+  const actuel = String(éditeur.getAttributes('link').href ?? '');
+  const saisie = await ui.askText({ title: fr.dialog.linkTitle, label: fr.dialog.linkLabel, value: actuel || 'https://' });
+  if (saisie === null) return;
+  if (saisie.trim() === '' || saisie.trim() === 'https://') {
+    éditeur.chain().focus().extendMarkRange('link').unsetLink().run();
+    return;
+  }
+  const adresse = normaliserAdresse(saisie);
+  if (!adresse) {
+    ui.notify({ kind: 'error', text: fr.dialog.linkInvalid });
+    return;
+  }
+  if (éditeur.state.selection.empty && !éditeur.isActive('link')) {
+    // Rien de sélectionné : on écrit l'adresse elle-même comme texte du lien.
+    éditeur.chain().focus().insertContent({ type: 'text', text: adresse, marks: [{ type: 'link', attrs: { href: adresse } }] }).run();
+    return;
+  }
+  éditeur.chain().focus().extendMarkRange('link').setLink({ href: adresse }).run();
+}
+
+export async function runAction(action: EditorAction, éditeur: Editor, ui: EditorUi): Promise<void> {
+  const chaîne = () => éditeur.chain().focus();
+  switch (action) {
+    case 'edit:undo':
+      chaîne().undo().run();
+      break;
+    case 'edit:redo':
+      chaîne().redo().run();
+      break;
+    case 'edit:find':
+      ui.openFind(false);
+      break;
+    case 'edit:replace':
+      ui.openFind(true);
+      break;
+    case 'insert:image': {
+      const src = await ui.pickImage();
+      if (src) chaîne().setImage({ src }).run();
+      break;
+    }
+    case 'insert:table':
+      chaîne().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+      break;
+    case 'insert:link':
+      await basculerLien(éditeur, ui);
+      break;
+    case 'insert:hr':
+      chaîne().setHorizontalRule().run();
+      break;
+    case 'insert:page-break':
+      chaîne().setPageBreak().run();
+      break;
+    case 'format:bold':
+      chaîne().toggleBold().run();
+      break;
+    case 'format:italic':
+      chaîne().toggleItalic().run();
+      break;
+    case 'format:underline':
+      chaîne().toggleUnderline().run();
+      break;
+    case 'format:strike':
+      chaîne().toggleStrike().run();
+      break;
+    case 'format:superscript':
+      chaîne().toggleSuperscript().run();
+      break;
+    case 'format:subscript':
+      chaîne().toggleSubscript().run();
+      break;
+    case 'format:align-left':
+      chaîne().setTextAlign('left').run();
+      break;
+    case 'format:align-center':
+      chaîne().setTextAlign('center').run();
+      break;
+    case 'format:align-right':
+      chaîne().setTextAlign('right').run();
+      break;
+    case 'format:align-justify':
+      chaîne().setTextAlign('justify').run();
+      break;
+    case 'format:bullet-list':
+      chaîne().toggleBulletList().run();
+      break;
+    case 'format:ordered-list':
+      chaîne().toggleOrderedList().run();
+      break;
+    case 'format:task-list':
+      chaîne().toggleTaskList().run();
+      break;
+    case 'format:blockquote':
+      chaîne().toggleBlockquote().run();
+      break;
+    case 'format:clear':
+      chaîne().unsetAllMarks().clearNodes().run();
+      break;
+    case 'view:zoom-in':
+      ui.zoom(10);
+      break;
+    case 'view:zoom-out':
+      ui.zoom(-10);
+      break;
+    case 'view:zoom-reset':
+      ui.zoom('reset');
+      break;
+    case 'view:theme-light':
+      ui.setTheme('light');
+      break;
+    case 'view:theme-dark':
+      ui.setTheme('dark');
+      break;
+    case 'view:theme-system':
+      ui.setTheme('system');
+      break;
+  }
+}

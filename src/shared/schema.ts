@@ -30,7 +30,11 @@ export function buildExtensions(): Extensions {
     LineSpacing,
     PageBreak,
     TaskList,
-    TaskItem.configure({ nested: true }),
+    TaskItem.configure({
+      nested: true,
+      // TipTap écrit ce libellé (lu par les lecteurs d'écran) en anglais par défaut.
+      a11y: { checkboxLabel: (noeud) => `Case à cocher : ${noeud.textContent || 'tâche vide'}` },
+    }),
     Table.configure({ resizable: false }),
     TableRow,
     TableHeader,

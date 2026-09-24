@@ -1,0 +1,117 @@
+.home {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 56px 24px 40px;
+}
+.home-title {
+  margin: 0 0 6px;
+  font-size: 34px;
+  letter-spacing: -0.02em;
+}
+.home-tagline {
+  margin: 0 0 32px;
+  color: var(--muted);
+  font-size: 16px;
+}
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+}
+.card-active {
+  cursor: pointer;
+}
+.card-active:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+.card-soon {
+  opacity: 0.6;
+}
+.card-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+.card-hint {
+  color: var(--muted);
+}
+.badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+}
+.home-open {
+  gap: 6px;
+  margin-bottom: 36px;
+}
+.home-subtitle {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+.recent-empty {
+  margin: 0;
+  color: var(--muted);
+}
+.recent-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.recent-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.recent-item:hover {
+  background: var(--surface);
+}
+.recent-name,
+.recent-path {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recent-path {
+  color: var(--muted);
+  font-size: 12px;
+}

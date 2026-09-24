@@ -1,0 +1,133 @@
+:root {
+  color-scheme: light;
+  --bg: #eceff3;
+  --surface: #ffffff;
+  --surface-2: #f4f6f9;
+  --text: #1d2330;
+  --muted: #5b6678;
+  --border: #d3d8e0;
+  --accent: #2456d6;
+  --accent-contrast: #ffffff;
+  --accent-soft: #e3ebff;
+  --danger: #b42318;
+  --warning: #b86e00;
+  --shadow: 0 1px 2px rgba(20, 30, 50, 0.08), 0 8px 24px rgba(20, 30, 50, 0.1);
+  --font-ui: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #12151b;
+    --surface: #1b1f27;
+    --surface-2: #232833;
+    --text: #e6e9ef;
+    --muted: #9aa5b6;
+    --border: #333a47;
+    --accent: #6f97ff;
+    --accent-contrast: #0b1020;
+    --accent-soft: #24304f;
+    --danger: #ff7b72;
+    --warning: #f0a53a;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #12151b;
+  --surface: #1b1f27;
+  --surface-2: #232833;
+  --text: #e6e9ef;
+  --muted: #9aa5b6;
+  --border: #333a47;
+  --accent: #6f97ff;
+  --accent-contrast: #0b1020;
+  --accent-soft: #24304f;
+  --danger: #ff7b72;
+  --warning: #f0a53a;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 var(--font-ui);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.toasts {
+  position: fixed;
+  right: 16px;
+  bottom: 48px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(420px, calc(100vw - 32px));
+}
+.toast {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+.toast-error {
+  border-left-color: var(--danger);
+}
+.toast-warning {
+  border-left-color: var(--warning);
+}
+.toast-info {
+  border-left-color: var(--accent);
+}
