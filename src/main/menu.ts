@@ -271,7 +271,7 @@ export function construireMenu(d: MenuDeps): Menu {
         action('Monter la diapositive', 'slides:move-up'),
         action('Descendre la diapositive', 'slides:move-down'),
         séparateur,
-        action('Présenter', 'slides:present', { accelerator: 'F5' }),
+        action('Présenter', 'slides:present', affiché('F5')), // la fenêtre gère F5 elle-même
       ],
     },
     {

@@ -94,12 +94,16 @@ describe('menus de chaque application', () => {
     expect(appels.codeSource).toBe(1);
   });
 
-  it("n'enregistre pas deux fois les raccourcis que l'éditeur gère lui-même", () => {
+  it("n'enregistre pas deux fois les raccourcis que la fenêtre gère elle-même", () => {
     for (const app of ['text', 'sheet', 'slides'] as const) {
       const affichés = entrées(fabriquer(app).modèle).filter((e) => ['CmdOrCtrl+Z', 'CmdOrCtrl+Y', 'CmdOrCtrl+B', 'CmdOrCtrl+I'].includes(String(e.accelerator)));
       expect(affichés.length, app).toBeGreaterThan(0);
       for (const e of affichés) expect(e.registerAccelerator, `${app} ${e.label}`).toBe(false);
     }
+    // Dans les présentations, F5, Ctrl+D et Ctrl+M sont gérés par la fenêtre : les enregistrer aussi ouvrirait deux présentations.
+    const présentation = entrées(fabriquer('slides').modèle).filter((e) => ['F5', 'CmdOrCtrl+D', 'CmdOrCtrl+M'].includes(String(e.accelerator)));
+    expect(présentation.map((e) => e.accelerator).sort()).toEqual(['CmdOrCtrl+D', 'CmdOrCtrl+M', 'F5']);
+    for (const e of présentation) expect(e.registerAccelerator, String(e.label)).toBe(false);
   });
 
   it('a des identifiants uniques dans chaque menu, et toutes les actions déclarées sont utilisées quelque part', () => {
