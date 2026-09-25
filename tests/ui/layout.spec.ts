@@ -15,7 +15,7 @@ for (const largeur of LARGEURS) {
     test("l'accueil tient dans la fenêtre", async ({ page }) => {
       await installerFauxPont(page, { recents: [{ path: '/docs/a très long nom de document qui pourrait tout déborder si on n\'y prenait pas garde.tto', name: 'a très long nom de document qui pourrait tout déborder si on n\'y prenait pas garde.tto' }] });
       await page.goto('/');
-      await expect(page.locator('.card-active')).toBeVisible();
+      await expect(page.locator('.card-active').first()).toBeVisible();
       await sansDébordement(page);
     });
 

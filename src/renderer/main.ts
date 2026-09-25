@@ -5,6 +5,7 @@ import './styles/find.css';
 import './styles/dialog.css';
 import './styles/home.css';
 import './styles/tableur.css';
+import './styles/presentation.css';
 import { Shell } from './shell';
 import { applyStoredTheme } from './ui/theme';
 

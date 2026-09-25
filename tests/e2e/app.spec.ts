@@ -31,10 +31,10 @@ const cliquerMenu = (app: ElectronApplication, identifiant: string) =>
 test('affiche l\'accueil puis un document où l\'on écrit, avec le titre de la fenêtre à jour', async () => {
   const { app, page } = await lancer();
   await expect(page.locator('.card')).toHaveCount(3);
-  await expect(page.locator('.card-soon')).toHaveCount(2);
+  await expect(page.locator('.card-active')).toHaveCount(3);
   expect(await titre(app)).toBe('Text to One');
 
-  await page.locator('.card-active').click();
+  await page.locator('.card', { hasText: 'Texte' }).click();
   await page.locator('.ProseMirror').click();
   await page.keyboard.type('Bonjour le monde');
   await expect(page.locator('.status-count')).toContainText('3 mots');
@@ -46,7 +46,7 @@ test('affiche l\'accueil puis un document où l\'on écrit, avec le titre de la 
 test('enregistre un vrai fichier .tto, puis le rouvre dans une nouvelle fenêtre', async () => {
   const { app, page, dossier } = await lancer();
   const cible = join(dossier, 'Rapport été.tto');
-  await page.locator('.card-active').click();
+  await page.locator('.card', { hasText: 'Texte' }).click();
   await page.locator('.ProseMirror').click();
   await page.keyboard.type('Contenu sauvegardé');
 
@@ -68,7 +68,7 @@ test('enregistre un vrai fichier .tto, puis le rouvre dans une nouvelle fenêtre
 
 test('demande avant de fermer un document modifié, et garde la fenêtre si on annule', async () => {
   const { app, page } = await lancer();
-  await page.locator('.card-active').click();
+  await page.locator('.card', { hasText: 'Texte' }).click();
   await page.locator('.ProseMirror').click();
   await page.keyboard.type('Pas encore enregistré');
   await expect.poll(() => titre(app)).toContain('•');
@@ -86,7 +86,7 @@ test('demande avant de fermer un document modifié, et garde la fenêtre si on a
 
 test("montre l'erreur quand le disque refuse, et garde le document modifié", async () => {
   const { app, page, dossier } = await lancer();
-  await page.locator('.card-active').click();
+  await page.locator('.card', { hasText: 'Texte' }).click();
   await page.locator('.ProseMirror').click();
   await page.keyboard.type('Contenu');
   await simuler(app, 'showSaveDialog', { canceled: false, filePath: join(dossier, 'dossier-absent', 'a.tto') });
@@ -100,7 +100,7 @@ test("montre l'erreur quand le disque refuse, et garde le document modifié", as
 test('exporte un vrai PDF', async () => {
   const { app, page, dossier } = await lancer();
   const cible = join(dossier, 'sortie.pdf');
-  await page.locator('.card-active').click();
+  await page.locator('.card', { hasText: 'Texte' }).click();
   await page.locator('.ProseMirror').click();
   await page.keyboard.type('Texte du PDF');
   await simuler(app, 'showSaveDialog', { canceled: false, filePath: cible });

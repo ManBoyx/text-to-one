@@ -3,6 +3,7 @@ import { appForFileName, type AppKind } from '../shared/kinds';
 import type { AppSession } from './app-session';
 import { créerSession } from './editor/session';
 import { créerSessionTableur } from './sheet/session';
+import { créerSessionPrésentation } from './slides/session';
 import { fr } from './fr';
 import { montrerAccueil } from './home';
 import { setTheme } from './ui/theme';
@@ -61,6 +62,7 @@ export class Shell {
 
   private créer(app: AppKind, options: { id?: string }): AppSession {
     if (app === 'sheet') return créerSessionTableur(this.hôte, this.bridge, options);
+    if (app === 'slides') return créerSessionPrésentation(this.hôte, this.bridge, options);
     return créerSession(this.hôte, this.bridge, options);
   }
 

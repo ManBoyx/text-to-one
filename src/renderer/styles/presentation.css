@@ -1,0 +1,229 @@
+.slides-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.sl-main {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 208px 1fr;
+  min-height: 0;
+}
+
+.sl-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  overflow: auto;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+}
+.thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 6px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+}
+.thumb:hover {
+  background: var(--surface-2);
+}
+.thumb.is-current {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.thumb-frame {
+  position: relative;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px var(--border);
+  pointer-events: none;
+}
+.thumb-frame .slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.thumb-number {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  font-size: 11px;
+}
+
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--bg);
+  outline: none;
+}
+.stage-frame {
+  position: relative;
+  flex: none;
+  box-shadow: var(--shadow);
+}
+.stage-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  --inverse: 1;
+  transform-origin: top left;
+  background: #ffffff;
+  user-select: none;
+  color-scheme: light;
+}
+
+.slide {
+  position: relative;
+  overflow: hidden;
+  transform-origin: top left;
+  font-family: Arial, 'Liberation Sans', Helvetica, sans-serif;
+}
+.obj {
+  position: absolute;
+  box-sizing: border-box;
+  cursor: move;
+}
+.obj-text {
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.obj-shape {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.obj-shape-text {
+  width: 100%;
+  padding: 8px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.obj-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+}
+.obj .is-editing,
+.obj.is-editing {
+  outline: 2px dashed #2456d6;
+  cursor: text;
+  user-select: text;
+}
+
+.sel {
+  position: absolute;
+  box-sizing: border-box;
+  border: calc(2px * var(--inverse)) solid #2456d6;
+  pointer-events: none;
+}
+.handle {
+  position: absolute;
+  box-sizing: border-box;
+  width: calc(12px * var(--inverse));
+  height: calc(12px * var(--inverse));
+  border: calc(2px * var(--inverse)) solid #2456d6;
+  background: #ffffff;
+  pointer-events: auto;
+}
+.handle-nw { top: calc(-7px * var(--inverse)); left: calc(-7px * var(--inverse)); cursor: nwse-resize; }
+.handle-n { top: calc(-7px * var(--inverse)); left: calc(50% - 6px * var(--inverse)); cursor: ns-resize; }
+.handle-ne { top: calc(-7px * var(--inverse)); right: calc(-7px * var(--inverse)); cursor: nesw-resize; }
+.handle-e { top: calc(50% - 6px * var(--inverse)); right: calc(-7px * var(--inverse)); cursor: ew-resize; }
+.handle-se { right: calc(-7px * var(--inverse)); bottom: calc(-7px * var(--inverse)); cursor: nwse-resize; }
+.handle-s { bottom: calc(-7px * var(--inverse)); left: calc(50% - 6px * var(--inverse)); cursor: ns-resize; }
+.handle-sw { bottom: calc(-7px * var(--inverse)); left: calc(-7px * var(--inverse)); cursor: nesw-resize; }
+.handle-w { top: calc(50% - 6px * var(--inverse)); left: calc(-7px * var(--inverse)); cursor: ew-resize; }
+
+.sl-layout {
+  width: 150px;
+}
+.sl-size {
+  width: 68px;
+}
+
+.present {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  background: #000000;
+  outline: none;
+}
+.present-stage {
+  position: relative;
+  overflow: hidden;
+}
+.present-count,
+.present-hint {
+  position: fixed;
+  bottom: 12px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 13px;
+}
+.present-count {
+  right: 14px;
+}
+.present-hint {
+  left: 14px;
+  opacity: 0.85;
+  animation: present-hint-fondu 4s forwards;
+}
+@keyframes present-hint-fondu {
+  0%,
+  70% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* L'impression n'existe qu'à l'export en PDF : une page par diapositive, à la taille exacte de la diapositive. */
+.print-slides {
+  display: none;
+}
+@media print {
+  @page slides {
+    size: 960px 540px;
+    margin: 0;
+  }
+  .slides-app {
+    display: none !important;
+  }
+  .print-slides {
+    display: block;
+  }
+  .print-slide {
+    position: relative;
+    width: 960px;
+    height: 540px;
+    overflow: hidden;
+    break-after: page;
+    page: slides;
+  }
+  .print-slide .slide {
+    transform: none;
+  }
+}

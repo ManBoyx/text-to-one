@@ -7,18 +7,13 @@ test.describe('écran d\'accueil', () => {
     await page.goto('/');
   });
 
-  test('présente trois applications dont deux annoncées « bientôt »', async ({ page }) => {
+  test('présente les trois applications de la suite, toutes disponibles', async ({ page }) => {
     await expect(page.locator('.card')).toHaveCount(3);
-    await expect(page.locator('.card-active')).toContainText('Texte');
-    const bientôt = page.locator('.card-soon');
-    await expect(bientôt).toHaveCount(2);
-    await expect(bientôt.nth(0)).toContainText('Tableur');
-    await expect(bientôt.nth(1)).toContainText('Présentations');
-    for (const i of [0, 1]) {
-      await expect(bientôt.nth(i)).toContainText('Bientôt');
-      await expect(bientôt.nth(i)).toHaveAttribute('aria-disabled', 'true');
-    }
-    await expect(page.locator('.home-tagline')).toContainText('arrivent bientôt');
+    await expect(page.locator('.card-active')).toHaveCount(3);
+    await expect(page.locator('.card-soon')).toHaveCount(0);
+    const titres = await page.locator('.card-title').allTextContents();
+    expect(titres).toEqual(['Texte', 'Tableur', 'Présentations']);
+    await expect(page.locator('.home-tagline')).toContainText('texte, tableur et présentations');
   });
 
   test('liste les documents récents', async ({ page }) => {
@@ -26,8 +21,14 @@ test.describe('écran d\'accueil', () => {
     await expect(page.locator('.recent-name')).toHaveText('Rapport été 2025.tto');
   });
 
-  test('ouvre un nouveau document texte', async ({ page }) => {
-    await page.locator('.card-active').click();
+  test('ouvre un nouveau document texte, un tableur ou une présentation selon la carte', async ({ page }) => {
+    await page.locator('.card', { hasText: 'Tableur' }).click();
+    await expect(page.locator('.sg')).toBeVisible();
+    await page.goto('/');
+    await page.locator('.card', { hasText: 'Présentations' }).click();
+    await expect(page.locator('.stage')).toBeVisible();
+    await page.goto('/');
+    await page.locator('.card', { hasText: 'Texte' }).click();
     await expect(page.locator('.toolbar')).toBeVisible();
     await expect(page.locator('.ProseMirror')).toBeFocused();
     await expect(page.locator('.statusbar')).toContainText('0 mot');

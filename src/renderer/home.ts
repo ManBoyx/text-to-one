@@ -33,7 +33,9 @@ export async function montrerAccueil(hôte: HTMLElement, bridge: Bridge, gestion
   texte.addEventListener('click', () => gestionnaires.onNew('text'));
   const tableur = carte(Sheet, fr.home.sheet, fr.home.sheetHint, true);
   tableur.addEventListener('click', () => gestionnaires.onNew('sheet'));
-  cartes.append(texte, tableur, carte(Presentation, fr.home.slides, fr.home.slidesHint, false));
+  const présentations = carte(Presentation, fr.home.slides, fr.home.slidesHint, true);
+  présentations.addEventListener('click', () => gestionnaires.onNew('slides'));
+  cartes.append(texte, tableur, présentations);
 
   const ouvrir = el('button', 'btn home-open');
   ouvrir.type = 'button';

@@ -25,7 +25,7 @@ test.describe('langue', () => {
   test("l'accueil est entièrement en français", async ({ page }) => {
     await installerFauxPont(page, { recents: [{ path: '/docs/Bilan.tto', name: 'Bilan.tto' }] });
     await page.goto('/');
-    await expect(page.locator('.card-active')).toBeVisible();
+    await expect(page.locator('.card-active').first()).toBeVisible();
     const anglais = (await textesDeLaPage(page)).filter((t) => MOTS_ANGLAIS.test(t));
     expect(anglais).toEqual([]);
   });
@@ -37,5 +37,21 @@ test.describe('langue', () => {
     const anglais = (await textesDeLaPage(page)).filter((t) => MOTS_ANGLAIS.test(t));
     expect(anglais).toEqual([]);
     await expect(page.locator('.ProseMirror input[type="checkbox"]').first()).toHaveAttribute('aria-label', 'Case à cocher : fait');
+  });
+
+  test('le tableur est entièrement en français', async ({ page }) => {
+    await installerFauxPont(page, { init: { type: 'new', app: 'sheet' } });
+    await page.goto('/');
+    await expect(page.locator('.sg')).toBeVisible();
+    const anglais = (await textesDeLaPage(page)).filter((t) => MOTS_ANGLAIS.test(t));
+    expect(anglais).toEqual([]);
+  });
+
+  test('les présentations sont entièrement en français', async ({ page }) => {
+    await installerFauxPont(page, { init: { type: 'new', app: 'slides' } });
+    await page.goto('/');
+    await expect(page.locator('.stage')).toBeVisible();
+    const anglais = (await textesDeLaPage(page)).filter((t) => MOTS_ANGLAIS.test(t));
+    expect(anglais).toEqual([]);
   });
 });
