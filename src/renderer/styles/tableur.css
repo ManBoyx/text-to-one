@@ -1,0 +1,166 @@
+.sheet-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sh-formula {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.sh-name,
+.sh-input {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+.sh-name {
+  width: 92px;
+  text-align: center;
+}
+.sh-input {
+  flex: 1;
+  min-width: 0;
+}
+.sh-fx {
+  color: var(--muted);
+  font-style: italic;
+}
+.sh-format {
+  width: 132px;
+  margin-left: 6px;
+}
+.sh-size {
+  color: var(--muted);
+}
+
+/* La grille reste claire dans tous les thèmes, comme la feuille du traitement de texte. */
+.sg {
+  --ligne: #dde2ea;
+  position: relative;
+  display: grid;
+  flex: 1;
+  grid-template-columns: 48px 1fr;
+  grid-template-rows: 24px 1fr;
+  min-height: 0;
+  background: var(--surface);
+}
+.sg-corner {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.sg-colheads,
+.sg-rowheads {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.sg-colheads {
+  border-bottom: 1px solid var(--border);
+}
+.sg-rowheads {
+  border-right: 1px solid var(--border);
+}
+.sg-colheads-inner {
+  position: relative;
+  height: 24px;
+}
+.sg-rowheads-inner {
+  position: relative;
+  width: 48px;
+}
+.sg-head {
+  position: absolute;
+  box-sizing: border-box;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 23px;
+  text-align: center;
+  user-select: none;
+  border-right: 1px solid var(--border);
+}
+.sg-colheads .sg-head {
+  top: 0;
+  height: 24px;
+}
+.sg-rowheads .sg-head {
+  left: 0;
+  width: 48px;
+  height: 24px;
+  border-bottom: 1px solid var(--border);
+  border-right: 0;
+}
+.sg-head.is-selected {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.sg-resize {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  z-index: 2;
+  width: 7px;
+  height: 100%;
+  cursor: col-resize;
+}
+
+.sg-body {
+  position: relative;
+  overflow: auto;
+  outline: none;
+  color-scheme: light;
+  background: #ffffff;
+  color: #111111;
+  font-size: 13px;
+}
+.sg-canvas {
+  position: relative;
+}
+.sg-cell {
+  position: absolute;
+  box-sizing: border-box;
+  height: 24px;
+  padding: 0 6px;
+  overflow: hidden;
+  border-right: 1px solid var(--ligne);
+  border-bottom: 1px solid var(--ligne);
+  line-height: 23px;
+  white-space: nowrap;
+  user-select: none;
+}
+.sg-error {
+  color: #b42318;
+}
+.sg-range {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid #2456d6;
+  background: rgba(36, 86, 214, 0.12);
+  pointer-events: none;
+}
+.sg-active {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid #2456d6;
+  pointer-events: none;
+}
+.sg-editor {
+  position: absolute;
+  z-index: 5;
+  box-sizing: border-box;
+  padding: 0 5px;
+  border: 2px solid #2456d6;
+  background: #ffffff;
+  color: #111111;
+  font-size: 13px;
+  outline: none;
+}

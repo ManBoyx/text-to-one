@@ -4,6 +4,7 @@ import './styles/toolbar.css';
 import './styles/find.css';
 import './styles/dialog.css';
 import './styles/home.css';
+import './styles/tableur.css';
 import { Shell } from './shell';
 import { applyStoredTheme } from './ui/theme';
 

@@ -1,10 +1,11 @@
 import { FileText, FolderOpen, Presentation, Sheet } from 'lucide';
 import type { Bridge, RecentEntry } from '../shared/bridge';
+import type { AppKind } from '../shared/kinds';
 import { fr } from './fr';
 import { el, icône } from './ui/dom';
 
 export interface GestionnairesAccueil {
-  onNew(): void;
+  onNew(app: AppKind): void;
   onOpen(): void;
   onOpenRecent(entrée: RecentEntry): void;
 }
@@ -29,8 +30,10 @@ export async function montrerAccueil(hôte: HTMLElement, bridge: Bridge, gestion
 
   const cartes = el('div', 'home-cards');
   const texte = carte(FileText, fr.home.text, fr.home.textHint, true);
-  texte.addEventListener('click', () => gestionnaires.onNew());
-  cartes.append(texte, carte(Sheet, fr.home.sheet, fr.home.sheetHint, false), carte(Presentation, fr.home.slides, fr.home.slidesHint, false));
+  texte.addEventListener('click', () => gestionnaires.onNew('text'));
+  const tableur = carte(Sheet, fr.home.sheet, fr.home.sheetHint, true);
+  tableur.addEventListener('click', () => gestionnaires.onNew('sheet'));
+  cartes.append(texte, tableur, carte(Presentation, fr.home.slides, fr.home.slidesHint, false));
 
   const ouvrir = el('button', 'btn home-open');
   ouvrir.type = 'button';

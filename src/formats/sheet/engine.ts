@@ -73,6 +73,13 @@ export class SheetEngine {
     this.position = 0;
   }
 
+  /** Ouvre un autre classeur : le contenu est remplacé et l'historique « annuler » repart de zéro. */
+  reset(doc: SheetDoc): void {
+    this.load(doc);
+    this.historique = [JSON.stringify(this.toDoc())];
+    this.position = 0;
+  }
+
   /** Remplace tout le contenu (ouverture d'un fichier, annulation). */
   load(doc: SheetDoc): void {
     this.hf?.destroy();
