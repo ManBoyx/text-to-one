@@ -4,7 +4,7 @@ import type { Bridge, SaveOutcome, SaveRequest, WindowState } from '../../src/sh
 export interface FakeBridge extends Bridge {
   saves: SaveRequest[];
   states: WindowState[];
-  recoveries: { id: string; name: string; size: number }[];
+  recoveries: { id: string; name: string; size: number; app: string }[];
   cleared: string[];
   pdfs: string[];
   closed: number;
@@ -37,8 +37,8 @@ export function createFakeBridge(): FakeBridge {
     setWindowState: (état) => {
       pont.states.push(état);
     },
-    writeRecovery: async (id, name, bytes) => {
-      pont.recoveries.push({ id, name, size: bytes.length });
+    writeRecovery: async (id, name, bytes, app) => {
+      pont.recoveries.push({ id, name, size: bytes.length, app });
     },
     clearRecovery: async (id) => {
       pont.cleared.push(id);

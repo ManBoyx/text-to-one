@@ -1,4 +1,4 @@
-import type { SaveKind } from './kinds';
+import type { AppKind, SaveKind } from './kinds';
 
 export interface OpenedFile {
   path: string;
@@ -35,13 +35,15 @@ export interface WindowState {
   name: string;
   dirty: boolean;
   path: string | null;
+  /** L'application ouverte dans la fenêtre ; null sur l'écran d'accueil. */
+  app?: AppKind | null;
 }
 
 /** Ce que le processus principal demande d'afficher dans une fenêtre. */
 export type InitialRequest =
-  | { type: 'new' }
+  | { type: 'new'; app?: AppKind }
   | { type: 'file'; file: OpenedFile }
-  | { type: 'recovered'; id: string; name: string; bytes: Uint8Array };
+  | { type: 'recovered'; id: string; name: string; app?: AppKind; bytes: Uint8Array };
 
 /** Les actions envoyées par les menus natifs à la fenêtre. */
 export const MENU_ACTIONS = [
@@ -52,6 +54,12 @@ export const MENU_ACTIONS = [
   'format:align-left', 'format:align-center', 'format:align-right', 'format:align-justify',
   'format:bullet-list', 'format:ordered-list', 'format:task-list', 'format:blockquote', 'format:clear',
   'view:zoom-in', 'view:zoom-out', 'view:zoom-reset', 'view:theme-light', 'view:theme-dark', 'view:theme-system',
+  'file:export-xlsx', 'file:export-csv', 'file:export-pptx',
+  'sheet:insert-row', 'sheet:insert-col', 'sheet:delete-row', 'sheet:delete-col', 'sheet:clear',
+  'sheet:format-general', 'sheet:format-int', 'sheet:format-dec2', 'sheet:format-percent', 'sheet:format-eur',
+  'slides:new-slide', 'slides:duplicate-slide', 'slides:delete-slide', 'slides:move-up', 'slides:move-down',
+  'slides:insert-text', 'slides:insert-rect', 'slides:insert-ellipse', 'slides:insert-image', 'slides:present',
+  'slides:bring-front', 'slides:send-back', 'slides:duplicate-object', 'slides:delete-object',
   'app:save-and-close',
 ] as const;
 
@@ -70,7 +78,7 @@ export interface Bridge {
   exportPdf(suggestedName: string): Promise<SaveOutcome>;
   listRecents(): Promise<RecentEntry[]>;
   setWindowState(state: WindowState): void;
-  writeRecovery(id: string, name: string, bytes: Uint8Array): Promise<void>;
+  writeRecovery(id: string, name: string, bytes: Uint8Array, app: AppKind): Promise<void>;
   clearRecovery(id: string): Promise<void>;
   closeWindow(): void;
   openExternal(url: string): void;

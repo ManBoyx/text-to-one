@@ -7,6 +7,9 @@ import type { Theme } from '../ui/theme';
 /** Les actions que l'éditeur sait faire ; les menus natifs et la barre d'outils passent par les mêmes. */
 export type EditorAction = Extract<MenuAction, `edit:${string}` | `insert:${string}` | `format:${string}` | `view:${string}`>;
 
+/** Les actions du traitement de texte ; les autres (tableur, présentations) ne le concernent pas. */
+export const isEditorAction = (action: MenuAction): action is EditorAction => /^(edit|insert|format|view):/.test(action);
+
 export interface EditorUi {
   askText(options: { title: string; label: string; value?: string }): Promise<string | null>;
   pickImage(): Promise<string | null>;

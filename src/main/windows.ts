@@ -1,6 +1,7 @@
 import { join } from 'node:path';
-import { BrowserWindow, dialog, shell } from 'electron';
+import { BrowserWindow, dialog, shell, type Menu } from 'electron';
 import type { InitialRequest, MenuAction, WindowState } from '../shared/bridge';
+import { NATIVE_EXTENSION_PATTERN, type AppKind } from '../shared/kinds';
 import { IPC } from '../shared/ipc';
 import { fr } from '../renderer/fr';
 import { installerMenuContextuel } from './context-menu';
@@ -15,10 +16,24 @@ export interface InfoFenêtre {
   cheminsAutorisés: Set<string>;
   /** Ce que la fenêtre doit afficher au démarrage ; lu une seule fois. */
   demande: InitialRequest | null;
+  /** L'application ouverte dans la fenêtre (null : écran d'accueil) : elle détermine les menus. */
+  app: AppKind | null;
 }
 
 const fenêtres = new Map<number, InfoFenêtre>();
 let brouillons: RecoveryStore | null = null;
+let fournisseurDeMenu: ((app: AppKind | null) => Menu) | null = null;
+
+/** Chaque fenêtre a les menus de son application : on donne ici la façon de les fabriquer. */
+export function définirFournisseurDeMenu(fournisseur: (app: AppKind | null) => Menu): void {
+  fournisseurDeMenu = fournisseur;
+}
+
+export function appliquerMenu(info: InfoFenêtre): void {
+  if (fournisseurDeMenu) info.fenêtre.setMenu(fournisseurDeMenu(info.app));
+}
+
+export const toutesLesFenêtres = (): InfoFenêtre[] => [...fenêtres.values()];
 
 export function initialiserFenêtres(recovery: RecoveryStore): void {
   brouillons = recovery;
@@ -76,8 +91,9 @@ export function créerFenêtre(demande: InitialRequest | null = null): BrowserWi
     },
   });
   const identifiant = fenêtre.id;
-  const info: InfoFenêtre = { fenêtre, état: null, peutFermer: false, cheminsAutorisés: new Set(), demande };
+  const info: InfoFenêtre = { fenêtre, état: null, peutFermer: false, cheminsAutorisés: new Set(), demande, app: null };
   fenêtres.set(identifiant, info);
+  appliquerMenu(info);
 
   fenêtre.once('ready-to-show', () => fenêtre.show());
   fenêtre.on('page-title-updated', (événement) => événement.preventDefault());
@@ -120,7 +136,7 @@ function estVierge(info: InfoFenêtre | undefined): boolean {
 /** Ouvre un document dans la fenêtre donnée si elle est vierge, dans une nouvelle fenêtre sinon. */
 export function ouvrirDemande(demande: InitialRequest, depuis: BrowserWindow | null): void {
   const source = infoDe(depuis);
-  const chemin = demande.type === 'file' && /\.tto$/i.test(demande.file.path) ? demande.file.path : null;
+  const chemin = demande.type === 'file' && NATIVE_EXTENSION_PATTERN.test(demande.file.path) ? demande.file.path : null;
   if (depuis && source && estVierge(source)) {
     if (chemin) source.cheminsAutorisés.add(chemin);
     depuis.webContents.send(IPC.openRequest, demande);

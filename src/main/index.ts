@@ -2,11 +2,12 @@ import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import { app, BrowserWindow, dialog, Menu, shell } from 'electron';
 import { fr } from '../renderer/fr';
+import { APP_EXTENSIONS, OPENABLE_EXTENSIONS, type AppKind } from '../shared/kinds';
 import { boîteOuvrir, enregistrerIpc, lireDocument, type ContexteIpc } from './ipc';
 import { construireMenu } from './menu';
 import { RecentsStore, fileStorage } from './recents';
 import { RecoveryStore } from './recovery';
-import { créerFenêtre, envoyerAction, fenêtreCible, initialiserFenêtres, ouvrirDemande } from './windows';
+import { appliquerMenu, créerFenêtre, définirFournisseurDeMenu, envoyerAction, fenêtreCible, initialiserFenêtres, ouvrirDemande, toutesLesFenêtres } from './windows';
 
 const URL_DÉPÔT = 'https://github.com/ManBoyx/text-to-one';
 
@@ -16,7 +17,8 @@ app.setAppUserModelId('io.github.manboyx.texttoone');
 
 /** Les fichiers .tto et .docx donnés en argument (double-clic dans l'explorateur). */
 async function cheminsDocuments(argv: string[]): Promise<string[]> {
-  const candidats = argv.slice(process.defaultApp ? 2 : 1).filter((a) => !a.startsWith('-') && /\.(tto|docx)$/i.test(a));
+  const motif = new RegExp(`\\.(${OPENABLE_EXTENSIONS.join('|')})$`, 'i');
+  const candidats = argv.slice(process.defaultApp ? 2 : 1).filter((a) => !a.startsWith('-') && motif.test(a));
   const existants: string[] = [];
   for (const chemin of candidats) {
     if (await fs.stat(chemin).then((s) => s.isFile(), () => false)) existants.push(chemin);
@@ -32,20 +34,25 @@ async function démarrer(): Promise<void> {
   const recovery = new RecoveryStore(join(données, 'recovery'));
   initialiserFenêtres(recovery);
 
-  const reconstruireMenu = () =>
-    Menu.setApplicationMenu(
-      construireMenu({
-        récents: recents.entries(),
-        envoyer: envoyerAction,
-        nouveau: () => void créerFenêtre({ type: 'new' }),
-        ouvrir: () => void ouvrirDepuisBoîte(),
-        ouvrirRécent: (chemin) => void ouvrirChemin(chemin),
-        imprimer: () => void fenêtreCible()?.webContents.print({ printBackground: true }),
-        àPropos: () => void afficherÀPropos(),
-        codeSource: () => void shell.openExternal(URL_DÉPÔT),
-        développement: !app.isPackaged,
-      }),
-    );
+  const fabriquerMenu = (application: AppKind | null) =>
+    construireMenu({
+      récents: recents.entries(),
+      envoyer: envoyerAction,
+      nouveau: (type) => void créerFenêtre({ type: 'new', app: type }),
+      ouvrir: () => void ouvrirDepuisBoîte(),
+      ouvrirRécent: (chemin) => void ouvrirChemin(chemin),
+      imprimer: () => void fenêtreCible()?.webContents.print({ printBackground: true }),
+      àPropos: () => void afficherÀPropos(),
+      codeSource: () => void shell.openExternal(URL_DÉPÔT),
+      développement: !app.isPackaged,
+      app: application,
+    });
+  // Chaque fenêtre a les menus de son application ; la liste des récents se met à jour dans toutes.
+  définirFournisseurDeMenu(fabriquerMenu);
+  const reconstruireMenu = () => {
+    Menu.setApplicationMenu(fabriquerMenu('text'));
+    for (const info of toutesLesFenêtres()) appliquerMenu(info);
+  };
   const contexte: ContexteIpc = { recents, recovery, reconstruireMenu };
 
   async function ouvrirChemin(chemin: string): Promise<void> {
@@ -93,7 +100,10 @@ async function démarrer(): Promise<void> {
       await recovery.clearAll();
       return 0;
     }
-    for (const b of brouillons) créerFenêtre({ type: 'recovered', id: b.id, name: b.name, bytes: b.bytes });
+    for (const b of brouillons) {
+      const type = (Object.keys(APP_EXTENSIONS) as AppKind[]).find((a) => APP_EXTENSIONS[a][0] === b.ext) ?? 'text';
+      créerFenêtre({ type: 'recovered', id: b.id, name: b.name, app: type, bytes: b.bytes });
+    }
     return brouillons.length;
   }
 

@@ -2,12 +2,12 @@ import { basename, dirname, join } from 'node:path';
 import { BrowserWindow, app, dialog, ipcMain, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron';
 import type { OpenOutcome, SaveOutcome, SaveRequest, WindowState } from '../shared/bridge';
 import { IPC } from '../shared/ipc';
-import { KIND_INFO, isSaveKind } from '../shared/kinds';
+import { KIND_INFO, NATIVE_EXTENSION_PATTERN, NATIVE_KIND, OPENABLE_EXTENSIONS, isAppKind, isSaveKind } from '../shared/kinds';
 import { fr } from '../renderer/fr';
 import { TAILLE_MAX_DOCUMENT, describeFsError, ensureExtension, readDocumentFile, sanitizeFileName, writeFileAtomic } from './files';
 import type { RecentsStore } from './recents';
 import type { RecoveryStore } from './recovery';
-import { infoDe, ouvrirLienExterne, type InfoFenêtre } from './windows';
+import { appliquerMenu, infoDe, ouvrirLienExterne, type InfoFenêtre } from './windows';
 
 export interface ContexteIpc {
   recents: RecentsStore;
@@ -41,9 +41,10 @@ export async function boîteOuvrir(fenêtre: BrowserWindow | null, ctx: Contexte
     defaultPath: dossierCourant(),
     properties: ['openFile' as const],
     filters: [
-      { name: 'Documents Text to One et Word', extensions: ['tto', 'docx'] },
-      { name: KIND_INFO.tto.label, extensions: ['tto'] },
-      { name: KIND_INFO.docx.label, extensions: ['docx'] },
+      { name: 'Tous les documents', extensions: OPENABLE_EXTENSIONS },
+      { name: 'Textes (Text to One, Word)', extensions: ['tto', 'docx'] },
+      { name: 'Tableurs (Text to One, Excel, CSV)', extensions: ['tts', 'xlsx', 'csv'] },
+      { name: 'Présentations', extensions: ['ttp'] },
     ],
   };
   const choix = fenêtre ? await dialog.showOpenDialog(fenêtre, options) : await dialog.showOpenDialog(options);
@@ -51,6 +52,8 @@ export async function boîteOuvrir(fenêtre: BrowserWindow | null, ctx: Contexte
   dernierDossier = dirname(choix.filePaths[0]);
   return lireDocument(choix.filePaths[0], ctx);
 }
+
+const estNatif = (type: string): boolean => (Object.values(NATIVE_KIND) as string[]).includes(type);
 
 function validerEnregistrement(valeur: unknown): SaveRequest | null {
   if (typeof valeur !== 'object' || valeur === null) return null;
@@ -66,7 +69,7 @@ function validerÉtat(valeur: unknown): WindowState | null {
   const e = valeur as Partial<WindowState>;
   if (typeof e.id !== 'string' || typeof e.name !== 'string' || typeof e.dirty !== 'boolean') return null;
   if (e.path !== null && typeof e.path !== 'string') return null;
-  return { id: e.id.slice(0, 64), name: e.name.slice(0, 200), dirty: e.dirty, path: e.path ?? null };
+  return { id: e.id.slice(0, 64), name: e.name.slice(0, 200), dirty: e.dirty, path: e.path ?? null, app: isAppKind(e.app) ? e.app : null };
 }
 
 export function enregistrerIpc(ctx: ContexteIpc): void {
@@ -89,7 +92,7 @@ export function enregistrerIpc(ctx: ContexteIpc): void {
   ipcMain.handle(IPC.openDialog, async (événement): Promise<OpenOutcome> => {
     const info = fenêtreDe(événement);
     const résultat = await boîteOuvrir(info.fenêtre, ctx);
-    if (résultat.status === 'opened' && /\.tto$/i.test(résultat.file.path)) info.cheminsAutorisés.add(résultat.file.path);
+    if (résultat.status === 'opened' && NATIVE_EXTENSION_PATTERN.test(résultat.file.path)) info.cheminsAutorisés.add(résultat.file.path);
     return résultat;
   });
 
@@ -99,7 +102,7 @@ export function enregistrerIpc(ctx: ContexteIpc): void {
       return { status: 'error', message: 'Ce document ne fait plus partie des documents récents.' };
     }
     const résultat = await lireDocument(chemin, ctx);
-    if (résultat.status === 'opened' && /\.tto$/i.test(chemin)) info.cheminsAutorisés.add(chemin);
+    if (résultat.status === 'opened' && NATIVE_EXTENSION_PATTERN.test(chemin)) info.cheminsAutorisés.add(chemin);
     return résultat;
   });
 
@@ -111,7 +114,7 @@ export function enregistrerIpc(ctx: ContexteIpc): void {
     let chemin = requête.path && info.cheminsAutorisés.has(requête.path) ? requête.path : null;
     if (!chemin) {
       const choix = await dialog.showSaveDialog(info.fenêtre, {
-        title: requête.kind === 'tto' ? 'Enregistrer le document' : 'Exporter le document',
+        title: estNatif(requête.kind) ? 'Enregistrer le document' : 'Exporter le document',
         defaultPath: join(dossierCourant(), sanitizeFileName(requête.suggestedName)),
         filters: [{ name: KIND_INFO[requête.kind].label, extensions: [extension] }],
       });
@@ -124,7 +127,7 @@ export function enregistrerIpc(ctx: ContexteIpc): void {
     } catch (erreur) {
       return { status: 'error', message: describeFsError(erreur) };
     }
-    if (requête.kind === 'tto') {
+    if (estNatif(requête.kind)) {
       info.cheminsAutorisés.add(chemin);
       await ctx.recents.add(chemin, basename(chemin));
       ctx.reconstruireMenu();
@@ -162,15 +165,20 @@ export function enregistrerIpc(ctx: ContexteIpc): void {
     const état = validerÉtat(valeur);
     if (!état) return;
     info.état = état;
+    if (info.app !== état.app) {
+      info.app = état.app ?? null;
+      appliquerMenu(info); // chaque application a ses propres menus
+    }
     info.fenêtre.setTitle(état.id === 'accueil' ? fr.app : `${état.dirty ? '• ' : ''}${état.name} — ${fr.app}`);
   });
 
-  ipcMain.handle(IPC.writeRecovery, async (événement, id: unknown, nom: unknown, octets: unknown) => {
+  ipcMain.handle(IPC.writeRecovery, async (événement, id: unknown, nom: unknown, octets: unknown, app: unknown) => {
     fenêtreDe(événement);
     if (typeof id !== 'string' || typeof nom !== 'string' || !(octets instanceof Uint8Array) || octets.byteLength > TAILLE_MAX_DOCUMENT) {
       throw new Error('Demande de récupération invalide.');
     }
-    await ctx.recovery.write(id, nom.slice(0, 200), octets);
+    const extension = KIND_INFO[NATIVE_KIND[isAppKind(app) ? app : 'text']].extension;
+    await ctx.recovery.write(id, nom.slice(0, 200), octets, extension);
   });
 
   ipcMain.handle(IPC.clearRecovery, async (événement, id: unknown) => {

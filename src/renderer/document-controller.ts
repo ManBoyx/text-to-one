@@ -1,7 +1,8 @@
 import type { JSONContent } from '@tiptap/core';
-import { FormatError, decodeDocument, encodeDocument } from '../formats';
+import type { DocumentCodec } from '../formats/codec';
+import { FormatError, textCodec } from '../formats';
 import type { Bridge, OpenedFile, SaveOutcome } from '../shared/bridge';
-import { KIND_INFO, type SaveKind } from '../shared/kinds';
+import { KIND_INFO, NATIVE_KIND, type AppKind, type SaveKind } from '../shared/kinds';
 import { stripExtension } from '../shared/names';
 import { fr } from './fr';
 
@@ -16,10 +17,12 @@ export interface DocState {
   path: string | null;
 }
 
-export interface ControllerDeps {
+export interface ControllerDeps<Doc = JSONContent> {
   bridge: Bridge;
-  getDoc: () => JSONContent;
-  setDoc: (doc: JSONContent) => void;
+  /** Comment lire et écrire les documents de l'application ; le traitement de texte par défaut. */
+  codec?: DocumentCodec<Doc>;
+  getDoc: () => Doc;
+  setDoc: (doc: Doc) => void;
   notify: (notice: Notice) => void;
   onState?: (state: DocState) => void;
   newId?: () => string;
@@ -28,16 +31,22 @@ export interface ControllerDeps {
 const messageDe = (erreur: unknown, défaut: string): string => (erreur instanceof Error ? erreur.message : défaut);
 
 /** Le document courant d'une fenêtre : son nom, son chemin, s'il est modifié, et tout ce qu'on peut en faire. */
-export class DocumentController {
+export class DocumentController<Doc = JSONContent> {
   readonly id: string;
+  readonly app: AppKind;
+  private readonly codec: DocumentCodec<Doc>;
+  private readonly natif: SaveKind;
   private path: string | null = null;
   private name: string = fr.untitled;
   private dirty = false;
   private révision = 0;
   private minuteur: ReturnType<typeof setInterval> | null = null;
 
-  constructor(private readonly deps: ControllerDeps) {
+  constructor(private readonly deps: ControllerDeps<Doc>) {
     this.id = (deps.newId ?? (() => crypto.randomUUID()))();
+    this.codec = deps.codec ?? (textCodec as unknown as DocumentCodec<Doc>);
+    this.app = this.codec.app;
+    this.natif = NATIVE_KIND[this.app];
     this.publier();
   }
 
@@ -55,10 +64,10 @@ export class DocumentController {
 
   async open(fichier: OpenedFile): Promise<boolean> {
     try {
-      const { doc, warnings, source } = await decodeDocument(fichier.name, fichier.bytes);
+      const { doc, warnings, native } = await this.codec.decode(fichier.name, fichier.bytes);
       this.deps.setDoc(doc);
-      // Un .docx ne s'enregistre pas « en place » : Enregistrer proposera un nouveau .tto.
-      this.path = source === 'tto' ? fichier.path : null;
+      // Un fichier importé (Word, Excel…) ne s'enregistre pas « en place » : Enregistrer proposera un nouveau fichier au format propre.
+      this.path = native ? fichier.path : null;
       this.name = stripExtension(fichier.name);
       this.dirty = false;
       this.révision++;
@@ -74,7 +83,7 @@ export class DocumentController {
 
   /** Un brouillon retrouvé après une fermeture inattendue : modifié, et sans chemin. */
   async openRecovered(nom: string, octets: Uint8Array): Promise<boolean> {
-    const ouvert = await this.open({ path: '', name: `${nom}.tto`, bytes: octets });
+    const ouvert = await this.open({ path: '', name: `${nom}.${KIND_INFO[this.natif].extension}`, bytes: octets });
     if (ouvert) {
       this.path = null;
       this.dirty = true;
@@ -94,8 +103,13 @@ export class DocumentController {
   private async écrire(chemin: string | null): Promise<boolean> {
     const révisionEnvoyée = this.révision;
     try {
-      const octets = await encodeDocument('tto', this.deps.getDoc(), this.name);
-      const résultat = await this.deps.bridge.save({ path: chemin, suggestedName: `${this.name}.tto`, kind: 'tto', bytes: octets });
+      const octets = await this.codec.encode(this.natif, this.deps.getDoc(), this.name);
+      const résultat = await this.deps.bridge.save({
+        path: chemin,
+        suggestedName: `${this.name}.${KIND_INFO[this.natif].extension}`,
+        kind: this.natif,
+        bytes: octets,
+      });
       if (résultat.status === 'cancelled') return false;
       if (résultat.status === 'error') {
         this.deps.notify({ kind: 'error', text: fr.errors.save(résultat.message) });
@@ -113,9 +127,9 @@ export class DocumentController {
     }
   }
 
-  async exportAs(kind: Exclude<SaveKind, 'tto'>): Promise<boolean> {
+  async exportAs(kind: SaveKind): Promise<boolean> {
     try {
-      const octets = await encodeDocument(kind, this.deps.getDoc(), this.name);
+      const octets = await this.codec.encode(kind, this.deps.getDoc(), this.name);
       const résultat = await this.deps.bridge.save({
         path: null,
         suggestedName: `${this.name}.${KIND_INFO[kind].extension}`,
@@ -165,8 +179,8 @@ export class DocumentController {
   private async brouillon(): Promise<void> {
     if (!this.dirty) return;
     try {
-      const octets = await encodeDocument('tto', this.deps.getDoc(), this.name);
-      await this.deps.bridge.writeRecovery(this.id, this.name, octets);
+      const octets = await this.codec.encode(this.natif, this.deps.getDoc(), this.name);
+      await this.deps.bridge.writeRecovery(this.id, this.name, octets, this.app);
     } catch {
       // Le brouillon n'est qu'un filet de sécurité : on ne dérange pas l'utilisateur s'il échoue.
     }
@@ -174,6 +188,6 @@ export class DocumentController {
 
   private publier(): void {
     this.deps.onState?.(this.state);
-    this.deps.bridge.setWindowState({ id: this.id, ...this.state });
+    this.deps.bridge.setWindowState({ id: this.id, ...this.state, app: this.app });
   }
 }

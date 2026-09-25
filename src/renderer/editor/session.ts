@@ -7,7 +7,7 @@ import { askText } from '../ui/dialog';
 import { el, icône } from '../ui/dom';
 import { setTheme } from '../ui/theme';
 import { showNotice } from '../ui/toast';
-import { runAction, type EditorUi } from './actions';
+import { isEditorAction, runAction, type EditorUi } from './actions';
 import { IMAGE_MAX_BYTES, créerÉditeur, lireEnAdresse } from './create-editor';
 import { créerBarreRecherche } from './find-bar';
 import { créerBarreOutils } from './toolbar';
@@ -129,7 +129,7 @@ export function créerSession(hôte: HTMLElement, bridge: Bridge, options: { id?
   };
   const barreOutils = créerBarreOutils(éditeur, ui);
 
-  const contrôleur = new DocumentController({
+  const contrôleur = new DocumentController<JSONContent>({
     bridge,
     getDoc: () => éditeur.getJSON(),
     setDoc: (doc) => remplacerContenu(éditeur, doc),
@@ -207,7 +207,7 @@ export function créerSession(hôte: HTMLElement, bridge: Bridge, options: { id?
           if (await contrôleur.save()) bridge.closeWindow();
           break;
         default:
-          await runAction(action, éditeur, ui);
+          if (isEditorAction(action)) await runAction(action, éditeur, ui);
       }
     },
     dispose() {

@@ -30,7 +30,7 @@ describe('document neuf', () => {
   it('commence sans titre et non modifié, et le dit à la fenêtre', () => {
     const { contrôleur, pont } = préparer();
     expect(contrôleur.state).toEqual({ name: 'Document sans titre', dirty: false, path: null });
-    expect(pont.states.at(-1)).toEqual({ id: 'id-test-0001', name: 'Document sans titre', dirty: false, path: null });
+    expect(pont.states.at(-1)).toEqual({ id: 'id-test-0001', name: 'Document sans titre', dirty: false, path: null, app: 'text' });
   });
 
   it('se marque modifié une seule fois, même après beaucoup de frappes', () => {

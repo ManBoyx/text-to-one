@@ -54,6 +54,10 @@ vi.mock('electron', () => {
       this.gestionnaires.set(nom, fn);
     }
     show() {}
+    menus: unknown[] = [];
+    setMenu(menu: unknown) {
+      this.menus.push(menu);
+    }
     setTitle(titre: string) {
       this.titre = titre;
     }
@@ -87,7 +91,7 @@ import { BrowserWindow } from 'electron';
 import { enregistrerIpc, type ContexteIpc } from '../../src/main/ipc';
 import { RecentsStore } from '../../src/main/recents';
 import { RecoveryStore } from '../../src/main/recovery';
-import { créerFenêtre, initialiserFenêtres, ouvrirDemande } from '../../src/main/windows';
+import { créerFenêtre, définirFournisseurDeMenu, initialiserFenêtres, ouvrirDemande } from '../../src/main/windows';
 
 const Faux = BrowserWindow as unknown as {
   toutes: any[];
@@ -373,6 +377,63 @@ describe('ouverture dans une fenêtre existante ou nouvelle', () => {
       ouvrirDemande(fichier, f);
       expect(Faux.toutes, JSON.stringify(état)).toHaveLength(2);
       expect(f.webContents.envoyés.filter((m: unknown[]) => m[0] === 'tto:open-request')).toEqual([]);
+    }
+  });
+});
+
+describe('plusieurs applications dans la même suite', () => {
+  it('donne à chaque fenêtre les menus de son application', () => {
+    const fournisseur = vi.fn((app: string | null) => ({ app }));
+    définirFournisseurDeMenu(fournisseur as any);
+    const f = nouvelleFenêtre();
+    expect(f.menus).toEqual([{ app: null }]); // l'accueil
+    appeler('tto:window-state', f, { id: ID, name: 'Budget', dirty: false, path: null, app: 'sheet' });
+    expect(f.menus.at(-1)).toEqual({ app: 'sheet' });
+    appeler('tto:window-state', f, { id: ID, name: 'Budget', dirty: true, path: null, app: 'sheet' });
+    expect(f.menus).toHaveLength(2); // pas de reconstruction tant que l'application ne change pas
+    appeler('tto:window-state', f, { id: 'abcdef12-0000-0000-0000-000000000000', name: 'Expo', dirty: false, path: null, app: 'slides' });
+    expect(f.menus.at(-1)).toEqual({ app: 'slides' });
+    appeler('tto:window-state', f, { id: ID, name: 'x', dirty: false, path: null, app: 'nimporte-quoi' });
+    expect(f.menus.at(-1)).toEqual({ app: null });
+    définirFournisseurDeMenu(null as any);
+  });
+
+  it('range le brouillon d\'un tableur sous son propre format, et le retrouve', async () => {
+    const f = nouvelleFenêtre();
+    await appeler('tto:write-recovery', f, ID, 'Budget', new Uint8Array([1, 2]), 'sheet');
+    await appeler('tto:write-recovery', f, 'abcdef12-1111-2222-3333-444444444444', 'Expo', new Uint8Array([3]), 'slides');
+    await appeler('tto:write-recovery', f, 'abcdef12-5555-6666-7777-888888888888', 'Lettre', new Uint8Array([4]), 'text');
+    const liste = (await recovery.list()).map((b) => [b.name, b.ext]).sort();
+    expect(liste).toEqual([['Budget', 'tts'], ['Expo', 'ttp'], ['Lettre', 'tto']]);
+    await expect(appeler('tto:write-recovery', f, ID, 'x', new Uint8Array([1]), 'pdf')).resolves.toBeUndefined(); // application inconnue : traitée comme du texte
+  });
+
+  it("autorise la réécriture des trois formats propres, mais pas des formats d'export", async () => {
+    const f = nouvelleFenêtre();
+    for (const [kind, ext] of [['tts', 'tts'], ['ttp', 'ttp']] as const) {
+      const cible = join(dossier, `doc.${ext}`);
+      h.dialog.showSaveDialog.mockResolvedValueOnce({ canceled: false, filePath: cible });
+      const premier: any = await appeler('tto:save', f, demandeDeSauvegarde({ kind, suggestedName: `doc.${ext}` }));
+      expect(premier.status).toBe('saved');
+      const avant = h.dialog.showSaveDialog.mock.calls.length;
+      await appeler('tto:save', f, demandeDeSauvegarde({ kind, path: cible, bytes: new Uint8Array([9]) }));
+      expect(h.dialog.showSaveDialog.mock.calls.length).toBe(avant); // réécrit sans reposer la question
+      expect(recents.has(cible)).toBe(true);
+    }
+    h.dialog.showSaveDialog.mockResolvedValue({ canceled: false, filePath: join(dossier, 'classeur.xlsx') });
+    const export_: any = await appeler('tto:save', f, demandeDeSauvegarde({ kind: 'xlsx', suggestedName: 'classeur.xlsx' }));
+    expect(recents.has(export_.path)).toBe(false);
+  });
+
+  it('ouvre les trois types de documents dans une fenêtre vierge', () => {
+    for (const nom of ['a.tto', 'b.tts', 'c.ttp']) {
+      Faux.toutes = [];
+      const f = nouvelleFenêtre();
+      appeler('tto:window-state', f, { id: 'accueil', name: 'Text to One', dirty: false, path: null, app: null });
+      const demande = { type: 'file', file: { path: join('x', nom), name: nom, bytes: new Uint8Array([1]) } } as any;
+      ouvrirDemande(demande, f);
+      expect(Faux.toutes, nom).toHaveLength(1);
+      expect(f.webContents.envoyés).toContainEqual(['tto:open-request', demande]);
     }
   });
 });

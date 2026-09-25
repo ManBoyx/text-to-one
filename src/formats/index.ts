@@ -1,5 +1,6 @@
 import type { JSONContent } from '@tiptap/core';
 import type { SaveKind } from '../shared/kinds';
+import type { DocumentCodec } from './codec';
 import { exportDocx } from './docx-export';
 import { importDocx } from './docx-import';
 import { FormatError } from './errors';
@@ -23,6 +24,8 @@ export async function encodeDocument(kind: SaveKind, doc: JSONContent, title: st
       return encodeur.encode(toPlainText(doc));
     case 'md':
       return encodeur.encode(toMarkdown(doc));
+    default:
+      throw new FormatError("Ce type d'export n'est pas disponible pour un document texte.");
   }
 }
 
@@ -43,3 +46,13 @@ export async function decodeDocument(fileName: string, bytes: Uint8Array): Promi
   }
   throw new FormatError(`Ce type de fichier n'est pas pris en charge : « ${fileName} ». Text to One ouvre les fichiers .tto et .docx.`);
 }
+
+/** Le codec du traitement de texte. */
+export const textCodec: DocumentCodec<JSONContent> = {
+  app: 'text',
+  encode: encodeDocument,
+  async decode(fileName, bytes) {
+    const lu = await decodeDocument(fileName, bytes);
+    return { doc: lu.doc, warnings: lu.warnings, native: lu.source === 'tto' };
+  },
+};
