@@ -1,33 +1,47 @@
 # Text to One
 
-Un traitement de texte libre pour Windows et Linux.
+Une suite bureautique libre pour Windows et Linux : un traitement de texte, un tableur et un logiciel de présentations.
 
-![Text to One, thème clair](docs/captures/editeur-light.png)
+![Écran d'accueil de Text to One](docs/captures/accueil-light.png)
 
-Text to One est le premier logiciel d'une future suite bureautique libre.
-**Le tableur et les présentations arrivent bientôt.**
+| Application | Ouvre | Enregistre et exporte |
+| --- | --- | --- |
+| **Texte** | `.tto`, Word (`.docx`) | `.tto`, Word, PDF, page web, texte brut, Markdown |
+| **Tableur** | `.tts`, Excel (`.xlsx`), CSV | `.tts`, Excel, CSV |
+| **Présentations** | `.ttp` | `.ttp`, PowerPoint (`.pptx`), PDF |
 
-| Application | État |
-| --- | --- |
-| Texte | disponible |
-| Tableur | bientôt |
-| Présentations | bientôt |
+Tout est en français : les menus, l'interface, les noms de fonctions du tableur (`SOMME`, `SI`, `NB.SI`…), le correcteur orthographique.
 
-## Ce qu'il sait faire
+## Texte
+
+![Le traitement de texte](docs/captures/editeur-light.png)
 
 - **Écrire** : titres, gras, italique, souligné, barré, exposant, indice, listes à puces, numérotées et à cocher, alignement, interligne, police, taille, couleurs, surlignage, liens, images, tableaux (avec fusion de cellules), citations, lignes de séparation, sauts de page.
-- **Confort** : rechercher et remplacer, compteur de mots, zoom, thèmes clair et sombre, correcteur orthographique français, enregistrement automatique avec récupération après un plantage, documents récents.
-- **Fichiers** : format propre `.tto` sans aucune perte ; ouverture des fichiers Word (`.docx`) ; export en `.docx`, PDF, page web, texte brut et Markdown.
+- **Confort** : rechercher et remplacer, compteur de mots, zoom, correcteur orthographique français, enregistrement automatique avec récupération après un plantage, documents récents.
+- **Word** : texte, titres, listes, tableaux, images, gras, italique, souligné, barré, couleurs, alignement. Pas de colonnes, zones de texte, styles personnalisés, suivi des modifications, en-têtes, pieds de page ni notes de bas de page : Text to One le signale à l'ouverture. Les anciens fichiers `.doc` ne sont pas pris en charge.
+- **Pas encore là** : en-têtes et pieds de page, table des matières, notes de bas de page, vraie découpe en pages à l'écran (les sauts de page n'existent qu'à l'impression et dans le PDF).
 
-![Text to One, thème sombre](docs/captures/editeur-dark.png)
+## Tableur
 
-### Ce qui n'est pas encore là
+![Le tableur](docs/captures/tableur-light.png)
 
-Les en-têtes et pieds de page, la table des matières, les notes de bas de page, les onglets et la vraie découpe en pages à l'écran (les sauts de page n'existent qu'à l'impression et dans le PDF).
+- **Formules en français** grâce au moteur libre [HyperFormula](https://hyperformula.handsontable.com) : plus de 380 fonctions (`SOMME`, `MOYENNE`, `SI`, `ET`, `NB.SI`, `ARRONDI`, `CONCATENER`…), références relatives et absolues (`$A$1`), plages, calcul automatique.
+- **Feuille** : 200 lignes et 26 colonnes au départ, qui grandissent quand on descend ou qu'on insère ; seules les cellules visibles sont affichées, donc les grandes feuilles restent fluides.
+- **Édition** : saisie dans la cellule ou dans la barre de formule, sélection au clavier et à la souris, statistiques de la sélection (nombre, somme, moyenne), copier-couper-coller (les références des formules se décalent), recopier vers le bas (`Ctrl+D`), insertion et suppression de lignes et de colonnes (les formules suivent), largeur de colonne réglable, annuler et rétablir.
+- **Mise en forme** : gras, italique, alignement, couleur du texte et du fond, formats de nombres (entier, deux décimales, pourcentage, euro).
+- **Excel et CSV** : les formules sont traduites entre le français et l'anglais dans les deux sens. Le CSV se lit et s'écrit à la française (`;`, virgule décimale, accents).
+- **Limites** : une seule feuille par classeur (les autres sont ignorées avec un avertissement), pas de graphiques, pas de cellules fusionnées, pas de dates à l'import Excel (elles restent des nombres), pas d'export PDF.
 
-### À propos de Word
+## Présentations
 
-Text to One lit et écrit les fichiers `.docx` : texte, titres, listes, tableaux, images, gras, italique, souligné, barré, couleurs, alignement. Il ne reprend pas les colonnes, les zones de texte, les styles personnalisés, le suivi des modifications, les en-têtes, les pieds de page ni les notes de bas de page, et il le signale à l'ouverture. Les anciens fichiers `.doc` ne sont pas pris en charge : enregistre-les d'abord en `.docx`.
+![Les présentations](docs/captures/presentation-light.png)
+
+- **Diapositives** en 16/9 : volet de miniatures, trois mises en page (titre, titre et contenu, vide), ajouter, dupliquer, supprimer, réordonner, fond en couleur.
+- **Objets** : zones de texte, rectangles, ellipses (avec du texte), images. On les déplace, on les redimensionne avec les poignées, on écrit dedans en double-cliquant, on les met au premier plan ou à l'arrière-plan, on les duplique (`Ctrl+D`).
+- **Mise en forme** : taille, gras, italique, souligné, alignement, couleurs du texte, du remplissage et du contour.
+- **Présenter** en plein écran (`F5`) : flèches, espace ou clic pour avancer, Échap pour quitter.
+- **PowerPoint** : l'export écrit un vrai `.pptx`. Text to One ne sait pas encore *ouvrir* un fichier PowerPoint.
+- **Pas encore là** : animations, transitions, notes de l'orateur, thèmes, texte avec plusieurs styles dans une même zone, formes autres que le rectangle et l'ellipse.
 
 ## Installer
 
@@ -43,13 +57,13 @@ Il faut Node.js 22 ou plus récent.
 ```bash
 npm install
 npm start            # fabrique puis lance l'application
-npm test             # tests des formats, du contrôleur, de la recherche et des fichiers
+npm test             # tests des formats, du tableur, des présentations, du contrôleur et des fichiers
 npm run test:ui      # tests de l'interface dans un navigateur
 npm run test:e2e     # tests de la vraie application (demande un écran)
 npm run dist         # fabrique les installateurs dans release/
 ```
 
-L'éditeur repose sur [TipTap](https://tiptap.dev) (ProseMirror), l'export Word sur [docx](https://docx.js.org), et l'application sur [Electron](https://www.electronjs.org).
+Le texte repose sur [TipTap](https://tiptap.dev) (ProseMirror) et [docx](https://docx.js.org) pour l'export Word, le tableur sur [HyperFormula](https://hyperformula.handsontable.com), les présentations sur [pptxgenjs](https://gitbrent.github.io/PptxGenJS/) pour l'export PowerPoint, et l'application sur [Electron](https://www.electronjs.org).
 
 ## Licence
 

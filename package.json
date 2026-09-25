@@ -2,7 +2,7 @@
   "name": "text-to-one",
   "productName": "Text to One",
   "version": "1.0.0",
-  "description": "Traitement de texte libre pour Windows et Linux.",
+  "description": "Suite bureautique libre pour Windows et Linux : texte, tableur et présentations.",
   "license": "GPL-3.0-only",
   "private": true,
   "type": "module",

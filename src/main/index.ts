@@ -73,7 +73,7 @@ async function démarrer(): Promise<void> {
       type: 'info',
       title: 'À propos',
       message: fr.app,
-      detail: `Version ${app.getVersion()}\n\nTraitement de texte libre, sous licence GPL-3.0.\nLe tableur et les présentations arrivent bientôt.\n\n${URL_DÉPÔT}`,
+      detail: `Version ${app.getVersion()}\n\nSuite bureautique libre (texte, tableur et présentations), sous licence GPL-3.0.\n\n${URL_DÉPÔT}`,
       buttons: ['Fermer', 'Code source'],
       defaultId: 0,
     });

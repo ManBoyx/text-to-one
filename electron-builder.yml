@@ -33,8 +33,8 @@ linux:
   category: Office
   syncDesktopName: true
   icon: build/icon.png
-  synopsis: Traitement de texte libre
-  description: Text to One est un traitement de texte libre, avec import et export Word et PDF.
+  synopsis: Suite bureautique libre
+  description: Text to One réunit un traitement de texte, un tableur et un logiciel de présentations, avec import et export Word, Excel et PowerPoint.
 appImage:
   artifactName: Text-to-One-${version}.${ext}
 deb:
