@@ -7,6 +7,8 @@ import { boîteOuvrir, enregistrerIpc, lireDocument, type ContexteIpc } from './
 import { construireMenu } from './menu';
 import { RecentsStore, fileStorage } from './recents';
 import { RecoveryStore } from './recovery';
+import { vérifierMisesÀJour, type DépendancesMisesÀJour } from './update-flow';
+import { StockageMisesÀJour } from './update-settings';
 import { appliquerMenu, créerFenêtre, définirFournisseurDeMenu, envoyerAction, fenêtreCible, initialiserFenêtres, ouvrirDemande, toutesLesFenêtres } from './windows';
 
 const URL_DÉPÔT = 'https://github.com/ManBoyx/text-to-one';
@@ -33,6 +35,26 @@ async function démarrer(): Promise<void> {
   await recents.load();
   const recovery = new RecoveryStore(join(données, 'recovery'));
   initialiserFenêtres(recovery);
+  const misesÀJour = new StockageMisesÀJour(join(données, 'mises-a-jour.json'));
+  await misesÀJour.charger();
+  const dépendancesMisesÀJour = (): DépendancesMisesÀJour => ({
+    versionInstallée: app.getVersion(),
+    titre: fr.app,
+    stockage: misesÀJour,
+    appImage: process.env.APPIMAGE,
+    afficher: (options) => {
+      const cible = fenêtreCible();
+      return cible ? dialog.showMessageBox(cible, options) : dialog.showMessageBox(options);
+    },
+    ouvrirPage: (url) => void shell.openExternal(url),
+    progression: (fraction) => {
+      for (const fenêtre of BrowserWindow.getAllWindows()) fenêtre.setProgressBar(fraction);
+    },
+    redémarrer: (fichier) => {
+      app.relaunch({ execPath: fichier });
+      app.quit();
+    },
+  });
 
   const fabriquerMenu = (application: AppKind | null) =>
     construireMenu({
@@ -43,6 +65,11 @@ async function démarrer(): Promise<void> {
       ouvrirRécent: (chemin) => void ouvrirChemin(chemin),
       àPropos: () => void afficherÀPropos(),
       codeSource: () => void shell.openExternal(URL_DÉPÔT),
+      chercherMiseÀJour: () => void vérifierMisesÀJour(dépendancesMisesÀJour(), true),
+      vérificationAuto: misesÀJour.lire().auto,
+      basculerVérificationAuto: () => {
+        void misesÀJour.modifier({ auto: !misesÀJour.lire().auto }).then(() => reconstruireMenu());
+      },
       développement: !app.isPackaged,
       app: application,
     });
@@ -129,6 +156,11 @@ async function démarrer(): Promise<void> {
   const chemins = await cheminsDocuments(process.argv);
   for (const chemin of chemins) await ouvrirChemin(chemin);
   if (!récupérés && !chemins.length && !BrowserWindow.getAllWindows().length) créerFenêtre();
+
+  // Une vérification par jour, discrète, seulement dans l'application installée (pas en développement ni dans les tests).
+  if (app.isPackaged && !process.env.TTO_USER_DATA && misesÀJour.àVérifier()) {
+    setTimeout(() => void vérifierMisesÀJour(dépendancesMisesÀJour(), false), 8000);
+  }
 }
 
 if (!app.requestSingleInstanceLock()) app.quit();

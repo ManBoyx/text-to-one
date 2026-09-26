@@ -13,7 +13,7 @@ type Modèle = MenuItemConstructorOptions[];
 function fabriquer(app: AppKind | null) {
   const actions: MenuAction[] = [];
   const nouveaux: AppKind[] = [];
-  const appels = { ouvrir: 0, aPropos: 0, codeSource: 0, récent: [] as string[] };
+  const appels = { ouvrir: 0, aPropos: 0, codeSource: 0, miseÀJour: 0, bascule: 0, récent: [] as string[] };
   const deps: MenuDeps = {
     récents: [{ path: '/docs/a.tto', name: 'a.tto' }],
     envoyer: (a) => actions.push(a),
@@ -22,6 +22,9 @@ function fabriquer(app: AppKind | null) {
     ouvrirRécent: (c) => appels.récent.push(c),
     àPropos: () => appels.aPropos++,
     codeSource: () => appels.codeSource++,
+    chercherMiseÀJour: () => appels.miseÀJour++,
+    vérificationAuto: true,
+    basculerVérificationAuto: () => appels.bascule++,
     développement: false,
     app,
   };
@@ -119,5 +122,18 @@ describe('menus de chaque application', () => {
     // Les actions de vue et de mise en forme du texte sont couvertes par le menu du traitement de texte.
     const inutilisées = MENU_ACTIONS.filter((a) => !utilisées.has(a) && a !== 'app:save-and-close');
     expect(inutilisées).toEqual([]);
+  });
+});
+
+describe('menu Aide : mises à jour', () => {
+  it('propose de chercher une mise à jour et de régler la vérification automatique', () => {
+    const { modèle, appels } = fabriquer(null);
+    const aide = entrées(modèle).find((e) => e.label === 'Aide')?.submenu as MenuItemConstructorOptions[];
+    const chercher = aide.find((e) => e.label === 'Rechercher des mises à jour…');
+    const auto = aide.find((e) => e.label === 'Vérifier automatiquement au démarrage');
+    expect(auto).toMatchObject({ type: 'checkbox', checked: true });
+    (chercher?.click as () => void)();
+    (auto?.click as () => void)();
+    expect(appels).toMatchObject({ miseÀJour: 1, bascule: 1 });
   });
 });

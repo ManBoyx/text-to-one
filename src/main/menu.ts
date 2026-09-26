@@ -11,6 +11,11 @@ export interface MenuDeps {
   ouvrirRécent(chemin: string): void;
   àPropos(): void;
   codeSource(): void;
+  /** L'utilisateur demande de chercher une mise à jour. */
+  chercherMiseÀJour(): void;
+  /** Vérification automatique au démarrage : état actuel et bascule. */
+  vérificationAuto: boolean;
+  basculerVérificationAuto(): void;
   développement: boolean;
   /** L'application de la fenêtre : chacune a ses menus ; null pour l'écran d'accueil. */
   app: AppKind | null;
@@ -94,6 +99,9 @@ export function construireMenu(d: MenuDeps): Menu {
     submenu: [
       { label: 'À propos de Text to One', click: d.àPropos },
       { label: 'Code source', click: d.codeSource },
+      séparateur,
+      { label: 'Rechercher des mises à jour…', click: d.chercherMiseÀJour },
+      { label: 'Vérifier automatiquement au démarrage', type: 'checkbox', checked: d.vérificationAuto, click: d.basculerVérificationAuto },
     ],
   };
   const annulerRétablir: MenuItemConstructorOptions[] = [

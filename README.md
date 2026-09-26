@@ -56,6 +56,13 @@ Les installateurs sont dans la page [Releases](../../releases) :
 - **Windows** : `Text-to-One-Installation-x.y.z.exe`. Windows affichera « éditeur inconnu » : le programme n'est pas signé (la signature est payante). Clique sur « Informations complémentaires » puis « Exécuter quand même ».
 - **Linux** : `Text-to-One-x.y.z.AppImage` (rends-le exécutable puis lance-le) ou `text-to-one_x.y.z_amd64.deb` (`sudo apt install ./text-to-one_x.y.z_amd64.deb`).
 
+### Mises à jour
+
+Le menu **Aide → Rechercher des mises à jour…** interroge la page des versions du dépôt (seule connexion faite, vers `api.github.com`, sans rien envoyer de toi ni de tes documents). Une vérification silencieuse a aussi lieu au démarrage, une fois par jour ; on la coupe dans le même menu (« Vérifier automatiquement au démarrage »). Quand une version plus récente existe :
+
+- **AppImage** : « Mettre à jour » télécharge le nouveau fichier, vérifie son empreinte SHA-256 (donnée par GitHub) puis remplace l'ancien fichier et propose de redémarrer. Si l'empreinte ne correspond pas, ou si le dossier n'est pas modifiable, rien n'est changé.
+- **Autres installations** (`.deb`, Windows) : le bouton ouvre la page de téléchargement.
+
 ## Développer
 
 Il faut Node.js 22 ou plus récent.
