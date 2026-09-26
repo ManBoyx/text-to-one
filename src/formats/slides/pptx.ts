@@ -1,4 +1,5 @@
 import PptxGenJS from 'pptxgenjs';
+import { extDeMédia } from '../../shared/media';
 import { SLIDE_H, SLIDE_W, type ShapeObject, type SlidesDoc, type TextObject, type TextStyle } from './model';
 
 const PIXELS_PAR_POUCE = 96;
@@ -52,6 +53,12 @@ export async function exportPptx(doc: SlidesDoc, titre = 'Présentation'): Promi
           line: contour,
         });
         if (o.text.trim()) diapo.addText(o.text, optionsDeTexte(o, o.style));
+      } else if (o.type === 'media') {
+        const mime = /^data:([^;]+);base64,/.exec(o.src.slice(0, 80))?.[1];
+        if (mime) {
+          // PowerPoint lit le son ou la vidéo intégré ; un son y apparaît comme une icône sur la diapositive.
+          diapo.addMedia({ type: o.kind, data: o.src.slice('data:'.length), extn: extDeMédia(mime), x: pouces(o.x), y: pouces(o.y), w: pouces(o.w), h: pouces(o.h) });
+        }
       } else if (o.src.startsWith('data:image/')) {
         diapo.addImage({ data: o.src.slice('data:'.length), x: pouces(o.x), y: pouces(o.y), w: pouces(o.w), h: pouces(o.h), altText: o.alt });
       }

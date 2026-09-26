@@ -1,4 +1,5 @@
 import type { Editor } from '@tiptap/core';
+import { construireSommaire } from '../../shared/toc';
 import type { MenuAction } from '../../shared/bridge';
 import type { Notice } from '../document-controller';
 import { fr } from '../fr';
@@ -18,6 +19,10 @@ export interface EditorUi {
   setTheme(thème: Theme): void;
   notify(notice: Notice): void;
   print(): void;
+  /** Entre dans le mode concentration, ou en sort. */
+  toggleFocus(): void;
+  /** Choisit un fichier son ou vidéo ; null si l'utilisateur annule. */
+  pickMedia(): Promise<{ src: string; title: string } | null>;
   /** Ouvre la fenêtre de saisie d'une formule ; null si l'utilisateur annule. */
   askMath(départ: { latex: string; bloc: boolean; modification: boolean }): Promise<{ latex: string; bloc: boolean } | null>;
 }
@@ -109,6 +114,28 @@ export async function runAction(action: EditorAction, éditeur: Editor, ui: Edit
       if (résultat) modifierOuInsérerFormule(éditeur, résultat.latex, résultat.bloc);
       break;
     }
+    case 'insert:media': {
+      const média = await ui.pickMedia();
+      if (média) chaîne().insertMedia(média.src, média.title).run();
+      break;
+    }
+    case 'insert:date': {
+      const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+      chaîne().insertContent(date).run();
+      break;
+    }
+    case 'insert:toc': {
+      const sommaire = construireSommaire(éditeur.getJSON());
+      if (!sommaire) {
+        ui.notify({ kind: 'info', text: fr.editor.noHeadings });
+        break;
+      }
+      chaîne().insertContent([{ type: 'paragraph', content: [{ type: 'text', text: fr.editor.tocTitle, marks: [{ type: 'bold' }] }] }, sommaire]).run();
+      break;
+    }
+    case 'view:focus':
+      ui.toggleFocus();
+      break;
     case 'insert:page-break':
       chaîne().setPageBreak().run();
       break;

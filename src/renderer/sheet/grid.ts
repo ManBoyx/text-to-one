@@ -1,5 +1,5 @@
 import { SheetEngine, normaliserRange, type ClipboardPayload, type Range } from '../../formats/sheet/engine';
-import { MAX_COLS, MAX_ROWS, ROW_HEIGHT, colName, type Alignment, type NumberFormat } from '../../formats/sheet/model';
+import { MAX_COLS, MAX_ROWS, ROW_HEIGHT, colName, type Alignment, type MediaCell, type NumberFormat } from '../../formats/sheet/model';
 import { el } from '../ui/dom';
 
 interface Cellule {
@@ -14,6 +14,8 @@ export interface RappelsGrille {
   onSelection(): void;
   /** Le texte en cours de saisie (null quand la saisie se termine) : la barre de formule le reflète. */
   onEditInput(valeur: string | null): void;
+  /** L'utilisateur a cliqué sur la pastille son / vidéo d'une cellule (déjà sélectionnée). */
+  onMedia?(): void;
 }
 
 const LARGEUR_EN_TÊTE = 48;
@@ -199,6 +201,16 @@ export class Grille {
         if (style.f) d.style.background = style.f;
         if (typeof v === 'object' && v) d.classList.add('sg-error');
         d.textContent = this.moteur.display(r, c);
+        const média = this.moteur.media(r, c);
+        if (média) {
+          d.classList.add('sg-has-media');
+          const pastille = el('span', 'sg-media');
+          pastille.title = média.title;
+          pastille.setAttribute('role', 'img');
+          pastille.setAttribute('aria-label', `${média.kind === 'video' ? 'Vidéo' : 'Son'} : ${média.title}`);
+          pastille.textContent = média.kind === 'video' ? '▶' : '♪';
+          d.append(pastille);
+        }
         cellules.append(d);
       }
     }
@@ -264,6 +276,11 @@ export class Grille {
     if (e.shiftKey) this.select(this.active, cellule);
     else this.select(cellule);
     this.corps.focus();
+    if ((e.target as HTMLElement).closest('.sg-media')) {
+      this.rappels.onMedia?.();
+      e.preventDefault();
+      return;
+    }
     const glisser = (m: MouseEvent) => {
       const sous = document.elementFromPoint(m.clientX, m.clientY)?.closest<HTMLElement>('.sg-cell');
       if (sous) this.select(this.active, { r: Number(sous.dataset.r), c: Number(sous.dataset.c) });
@@ -423,6 +440,18 @@ export class Grille {
   définirContenu(valeur: string): void {
     if (valeur === this.moteur.raw(this.active.r, this.active.c)) return;
     this.moteur.setRaw(this.active.r, this.active.c, valeur);
+    this.rendre();
+    this.rappels.onChange();
+  }
+
+  /** Le son ou la vidéo de la cellule active. */
+  médiaActif(): MediaCell | undefined {
+    return this.moteur.media(this.active.r, this.active.c);
+  }
+
+  /** Rattache (ou retire, avec null) un son ou une vidéo à la cellule active. */
+  définirMédia(média: MediaCell | null): void {
+    this.moteur.setMedia(this.active.r, this.active.c, média);
     this.rendre();
     this.rappels.onChange();
   }

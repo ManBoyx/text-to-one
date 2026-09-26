@@ -9,6 +9,7 @@ import {
   Bold,
   Columns3,
   Eraser,
+  Film,
   Italic,
   PaintBucket,
   Redo2,
@@ -17,7 +18,9 @@ import {
 } from 'lucide';
 import { SheetEngine, formatNumber } from '../../formats/sheet/engine';
 import { sheetCodec } from '../../formats/sheet';
-import { parseAddress, type NumberFormat, type SheetDoc } from '../../formats/sheet/model';
+import { MAX_MEDIA, parseAddress, type NumberFormat, type SheetDoc } from '../../formats/sheet/model';
+import { créerLecteur } from '../../shared/media';
+import { choisirMédia } from '../ui/media-picker';
 import type { Bridge, MenuAction, OpenedFile } from '../../shared/bridge';
 import type { AppSession } from '../app-session';
 import { DocumentController, type Notice } from '../document-controller';
@@ -135,6 +138,7 @@ export function créerSessionTableur(hôte: HTMLElement, bridge: Bridge, options
       actualiserTout();
     },
     onSelection: () => {
+      if (lecteurOuvert && grille.nomDeLaSélection() !== cellulesDuLecteur) fermerLecteur(); // le lecteur suit sa cellule
       nom.value = grille.nomDeLaSélection();
       entrée.value = moteur.raw(grille.active.r, grille.active.c);
       actualiserTout();
@@ -142,7 +146,54 @@ export function créerSessionTableur(hôte: HTMLElement, bridge: Bridge, options
     onEditInput: (valeur) => {
       entrée.value = valeur ?? moteur.raw(grille.active.r, grille.active.c);
     },
+    onMedia: () => ouvrirLecteur(),
   });
+
+  // ----- Lecteur de son et de vidéo d'une cellule
+  let lecteurOuvert: HTMLElement | null = null;
+  let cellulesDuLecteur = '';
+  const fermerLecteur = () => {
+    lecteurOuvert?.remove(); // retirer un lecteur de la page interrompt aussi la lecture
+    lecteurOuvert = null;
+  };
+  function ouvrirLecteur(): void {
+    const média = grille.médiaActif();
+    if (!média) return;
+    fermerLecteur();
+    cellulesDuLecteur = grille.nomDeLaSélection();
+    const boîte = el('div', 'sh-player');
+    boîte.setAttribute('role', 'dialog');
+    boîte.setAttribute('aria-label', `${fr.sheet.media.player} ${cellulesDuLecteur}`);
+    const titre = el('div', 'sh-player-title', `${cellulesDuLecteur} — ${média.title}`);
+    const lecteur = créerLecteur(média.src, média.title);
+    lecteur.classList.add('sh-player-media');
+    const actions = el('div', 'sh-player-actions');
+    const remplacer = el('button', 'btn', fr.sheet.media.replace);
+    remplacer.type = 'button';
+    remplacer.addEventListener('click', () => void gérerMenu('sheet:insert-media', true));
+    const retirer = el('button', 'btn', fr.sheet.media.remove);
+    retirer.type = 'button';
+    retirer.addEventListener('click', () => {
+      fermerLecteur();
+      grille.définirMédia(null);
+      grille.focaliser();
+    });
+    const fermer = el('button', 'btn btn-primary', fr.sheet.media.close);
+    fermer.type = 'button';
+    fermer.addEventListener('click', () => {
+      fermerLecteur();
+      grille.focaliser();
+    });
+    boîte.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Escape') fermer.click();
+    });
+    actions.append(remplacer, retirer, fermer);
+    boîte.append(titre, lecteur, actions);
+    racine.append(boîte);
+    lecteurOuvert = boîte;
+    fermer.focus();
+  }
 
   // Groupes de la barre d'outils
   const g1 = groupe();
@@ -192,6 +243,8 @@ export function créerSessionTableur(hôte: HTMLElement, bridge: Bridge, options
     format.value = grille.styleActif().n ?? 'general';
   });
   g4.append(format);
+  const g6 = groupe();
+  bouton(g6, 'sheet:insert-media', Film, fr.sheet.toolbar.media, () => grille.médiaActif() !== undefined);
   const g5 = groupe();
   bouton(g5, 'sheet:insert-row', BetweenHorizontalStart, fr.sheet.toolbar.insertRow);
   bouton(g5, 'sheet:insert-col', BetweenVerticalStart, fr.sheet.toolbar.insertCol);
@@ -235,8 +288,22 @@ export function créerSessionTableur(hôte: HTMLElement, bridge: Bridge, options
   contrôleur.startAutosave();
   grille.focaliser();
 
-  async function gérerMenu(action: MenuAction): Promise<void> {
+  async function gérerMenu(action: MenuAction, remplacer = false): Promise<void> {
     switch (action) {
+      case 'sheet:insert-media': {
+        // Sur une cellule qui a déjà un son ou une vidéo, le bouton ouvre le lecteur.
+        if (grille.médiaActif() && !remplacer) return ouvrirLecteur();
+        if (!grille.médiaActif() && moteur.nombreDeMédias >= MAX_MEDIA) {
+          notify({ kind: 'error', text: fr.sheet.media.tooMany(MAX_MEDIA) });
+          return;
+        }
+        const média = await choisirMédia(notify);
+        if (!média) return;
+        fermerLecteur();
+        grille.définirMédia({ kind: média.genre, title: média.title, src: média.src });
+        grille.focaliser();
+        break;
+      }
       case 'file:save':
         await contrôleur.save();
         break;
@@ -245,9 +312,11 @@ export function créerSessionTableur(hôte: HTMLElement, bridge: Bridge, options
         break;
       case 'file:export-xlsx':
         await contrôleur.exportAs('xlsx');
+        if (moteur.nombreDeMédias) notify({ kind: 'warning', text: fr.sheet.media.notExported });
         break;
       case 'file:export-csv':
         await contrôleur.exportAs('csv');
+        if (moteur.nombreDeMédias) notify({ kind: 'warning', text: fr.sheet.media.notExported });
         break;
       case 'app:save-and-close':
         if (await contrôleur.save()) bridge.closeWindow();
@@ -322,6 +391,9 @@ export function créerSessionTableur(hôte: HTMLElement, bridge: Bridge, options
       return ouvert;
     },
     handleMenu: gérerMenu,
-    dispose: () => contrôleur.dispose(),
+    dispose: () => {
+      fermerLecteur();
+      contrôleur.dispose();
+    },
   };
 }

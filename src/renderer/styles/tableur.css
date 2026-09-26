@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
 }
 
 .sh-formula {
@@ -163,4 +164,58 @@
   color: #111111;
   font-size: 13px;
   outline: none;
+}
+
+/* Sons et vidéos rattachés aux cellules */
+.sg-cell.sg-has-media {
+  padding-right: 24px;
+}
+.sg-media {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #2456d6;
+  color: #ffffff;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+.sh-player {
+  position: absolute;
+  right: 16px;
+  bottom: 40px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(420px, calc(100% - 32px));
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.sh-player-title {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sh-player-media {
+  width: 100%;
+}
+video.sh-player-media {
+  max-height: 260px;
+  background: #000000;
+}
+.sh-player-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }

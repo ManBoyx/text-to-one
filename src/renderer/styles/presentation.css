@@ -227,3 +227,85 @@
     transform: none;
   }
 }
+
+/* Sons et vidéos */
+.obj-media {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #1d2330;
+  color: #ffffff;
+}
+.obj-media-video {
+  background: #000000;
+}
+.obj-media .media-icon svg {
+  width: 28px;
+  height: 28px;
+}
+.obj-media .media-title {
+  max-width: 92%;
+  overflow: hidden;
+  font-size: 22px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.obj-media video.media-player {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.obj-media-audio audio.media-player {
+  display: none;
+}
+.obj-media-audio .media-icon {
+  opacity: 0.85;
+}
+.obj-media .media-play {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(36, 86, 214, 0.95);
+  color: #ffffff;
+  cursor: pointer;
+}
+.obj-media .media-play svg {
+  width: 22px;
+  height: 22px;
+}
+.obj-media .media-title {
+  z-index: 1;
+}
+.obj-media-video .media-title {
+  position: absolute;
+  left: 8px;
+  top: 6px;
+  max-width: calc(100% - 70px);
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 16px;
+}
+/* En présentation : les commandes natives, sur toute la hauteur de la vidéo ; le son garde son bandeau. */
+.present .obj-media video.media-player {
+  pointer-events: auto;
+}
+.present .obj-media-audio audio.media-player {
+  display: block;
+  width: 92%;
+}

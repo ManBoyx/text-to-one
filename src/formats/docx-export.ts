@@ -23,6 +23,7 @@ import {
   type IRunOptions,
 } from 'docx';
 import { dataUrlToBytes, readImageSize } from './images';
+import { genreDeAdresse } from '../shared/media';
 import { formuleEnWord } from './math-docx';
 
 type Noeud = JSONContent;
@@ -169,6 +170,9 @@ function imageWord(noeud: Noeud): EnLigne {
   });
 }
 
+/** Word ne porte pas nos lecteurs : on garde la trace du son ou de la vidéo, en texte. */
+const repèreMédia = (n: Noeud): string => `[${genreDeAdresse(String(n.attrs?.src ?? '')) === 'video' ? 'vidéo' : 'audio'} : ${String(n.attrs?.title ?? '') || 'sans titre'}]`;
+
 /** Une formule en objet mathématique de Word ; si elle n'est pas convertible, son code LaTeX en texte. */
 function formuleWord(noeud: Noeud): EnLigne {
   const latex = String(noeud.attrs?.latex ?? '');
@@ -277,6 +281,8 @@ function blocs(noeuds: Noeud[], ctx: Contexte, extra: Partial<IParagraphOptions>
           indent: { left: 720 },
           border: { left: { style: BorderStyle.SINGLE, size: 12, color: 'AAAAAA', space: 8 } },
         });
+      case 'media':
+        return [new Paragraph({ ...extra, children: [new TextRun({ text: repèreMédia(n), italics: true, color: '666666' })] })];
       case 'mathBlock':
         return [new Paragraph({ ...extra, alignment: AlignmentType.CENTER, children: [formuleWord(n)] })];
       case 'codeBlock':

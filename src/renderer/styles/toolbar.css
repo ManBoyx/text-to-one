@@ -135,3 +135,33 @@
 .swatch:hover {
   transform: scale(1.12);
 }
+
+/* Mode concentration : seule la feuille reste à l'écran */
+.editor-view.is-focus > .toolbar,
+.editor-view.is-focus > .statusbar,
+.editor-view.is-focus > .findbar {
+  display: none;
+}
+.focus-exit {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 30;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  opacity: 0.35;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.focus-exit:hover,
+.focus-exit:focus-visible {
+  opacity: 1;
+}
+.focus-exit[hidden] {
+  display: none;
+}

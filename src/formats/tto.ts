@@ -1,5 +1,6 @@
 import type { JSONContent } from '@tiptap/core';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { adresseMédiaValide, extDeMédia, mimeDeMédiaParExt } from '../shared/media';
 import { FormatError } from './errors';
 import { bytesToDataUrl, dataUrlToBytes, extForMime, mimeForExt } from './images';
 
@@ -11,7 +12,7 @@ const INVALIDE = "Ce fichier n'est pas un document Text to One valide.";
 
 /** Écrit un document : archive zip avec manifest.json, document.json et les images dans media/. */
 export function packTto(doc: JSONContent): Uint8Array {
-  const médias: Record<string, Uint8Array> = {};
+  const médias: Record<string, Uint8Array | [Uint8Array, { level: 0 }]> = {};
   const nomParAdresse = new Map<string, string>();
 
   const réécrire = (noeud: JSONContent): JSONContent => {
@@ -25,6 +26,18 @@ export function packTto(doc: JSONContent): Uint8Array {
           nom = `media/image-${nomParAdresse.size + 1}.${extForMime(décodé.mime)}`;
           nomParAdresse.set(src, nom);
           médias[nom] = décodé.bytes;
+        }
+      }
+      if (nom) suivant = { ...noeud, attrs: { ...noeud.attrs, src: nom } };
+    }
+    if (noeud.type === 'media' && adresseMédiaValide(src)) {
+      let nom = nomParAdresse.get(src);
+      if (!nom) {
+        const décodé = dataUrlToBytes(src);
+        if (décodé) {
+          nom = `media/${décodé.mime.startsWith('video/') ? 'video' : 'audio'}-${nomParAdresse.size + 1}.${extDeMédia(décodé.mime)}`;
+          nomParAdresse.set(src, nom);
+          médias[nom] = [décodé.bytes, { level: 0 }]; // déjà compressé : le recompresser ne ferait que ralentir
         }
       }
       if (nom) suivant = { ...noeud, attrs: { ...noeud.attrs, src: nom } };
@@ -73,6 +86,13 @@ export function unpackTto(bytes: Uint8Array): JSONContent {
     if (noeud.type === 'image' && typeof src === 'string' && src.startsWith('media/')) {
       const données = fichiers[src]; // on ne lit que dans l'archive, jamais sur le disque
       const mime = mimeForExt(src.split('.').pop() ?? '');
+      if (!données || !mime) return null;
+      return { ...noeud, attrs: { ...noeud.attrs, src: bytesToDataUrl(données, mime) } };
+    }
+    if (noeud.type === 'media' && typeof src === 'string') {
+      if (adresseMédiaValide(src)) return noeud;
+      const données = src.startsWith('media/') ? fichiers[src] : undefined;
+      const mime = mimeDeMédiaParExt(src.split('.').pop() ?? '');
       if (!données || !mime) return null;
       return { ...noeud, attrs: { ...noeud.attrs, src: bytesToDataUrl(données, mime) } };
     }

@@ -1,6 +1,8 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { adresseMédiaValide, extDeMédia, genreDeAdresse, mimeDeMédiaParExt } from '../../shared/media';
 import { FormatError } from '../errors';
-import { DEFAULT_COLS, DEFAULT_ROWS, MAX_COLS, MAX_ROWS, parseAddress, type Alignment, type CellStyle, type NumberFormat, type SheetDoc } from './model';
+import { bytesToDataUrl, dataUrlToBytes } from '../images';
+import { DEFAULT_COLS, DEFAULT_ROWS, MAX_COLS, MAX_MEDIA, MAX_ROWS, parseAddress, type Alignment, type CellStyle, type MediaCell, type NumberFormat, type SheetDoc } from './model';
 
 export const TTS_FORMAT_VERSION = 1;
 const INVALIDE = "Ce fichier n'est pas un classeur Text to One valide.";
@@ -36,15 +38,42 @@ export function nettoyerClasseur(brut: unknown): SheetDoc {
   for (const [c, l] of Object.entries((o.colWidths ?? {}) as Record<string, unknown>)) {
     if (/^\d+$/.test(c) && Number(c) < MAX_COLS && typeof l === 'number' && Number.isFinite(l)) colWidths[c] = Math.max(30, Math.min(600, Math.round(l)));
   }
-  return { rows: entier(o.rows, DEFAULT_ROWS, MAX_ROWS), cols: entier(o.cols, DEFAULT_COLS, MAX_COLS), cells, styles, colWidths };
+  const media: Record<string, MediaCell> = {};
+  for (const [adresse, m] of Object.entries((o.media ?? {}) as Record<string, Record<string, unknown>>).slice(0, MAX_MEDIA)) {
+    const a = parseAddress(adresse);
+    if (!a || a.r >= MAX_ROWS || a.c >= MAX_COLS || typeof m !== 'object' || m === null) continue;
+    if (typeof m.src !== 'string' || !(m.src.startsWith('media/') || adresseMédiaValide(m.src))) continue;
+    const genre = m.kind === 'video' ? 'video' : m.kind === 'audio' ? 'audio' : m.src.startsWith('data:') ? genreDeAdresse(m.src) : (/\.(mp4|m4v|webm|ogv)$/i.test(m.src) ? 'video' : 'audio');
+    media[adresse.toUpperCase()] = { kind: genre, title: typeof m.title === 'string' ? m.title.slice(0, 200) : '', src: m.src };
+  }
+  return { rows: entier(o.rows, DEFAULT_ROWS, MAX_ROWS), cols: entier(o.cols, DEFAULT_COLS, MAX_COLS), cells, styles, colWidths, ...(Object.keys(media).length ? { media } : {}) };
 }
 
-/** Écrit un classeur : archive zip avec manifest.json et sheet.json. */
+/** Écrit un classeur : archive zip avec manifest.json, sheet.json et les sons et vidéos dans media/. */
 export function packSheet(doc: SheetDoc): Uint8Array {
+  const médias: Record<string, [Uint8Array, { level: 0 }]> = {};
+  let écrit: SheetDoc = doc;
+  if (doc.media) {
+    const media: Record<string, MediaCell> = {};
+    const nomParAdresse = new Map<string, string>();
+    for (const [adresse, m] of Object.entries(doc.media)) {
+      let nom = adresseMédiaValide(m.src) ? nomParAdresse.get(m.src) : m.src;
+      if (!nom) {
+        const décodé = dataUrlToBytes(m.src);
+        if (!décodé) continue;
+        nom = `media/${m.kind}-${nomParAdresse.size + 1}.${extDeMédia(décodé.mime)}`;
+        nomParAdresse.set(m.src, nom);
+        médias[nom] = [décodé.bytes, { level: 0 }]; // déjà compressé
+      }
+      media[adresse] = { ...m, src: nom };
+    }
+    écrit = { ...doc, media };
+  }
   return zipSync(
     {
       'manifest.json': strToU8(JSON.stringify({ format: 'text-to-one-sheet', version: TTS_FORMAT_VERSION })),
-      'sheet.json': strToU8(JSON.stringify(doc)),
+      'sheet.json': strToU8(JSON.stringify(écrit)),
+      ...médias,
     },
     { level: 6 },
   );
@@ -74,5 +103,21 @@ export function unpackSheet(octets: Uint8Array): SheetDoc {
     throw new FormatError("Ce classeur a été créé avec une version plus récente de Text to One. Mets le logiciel à jour pour l'ouvrir.");
   }
   if (typeof feuille !== 'object' || feuille === null) throw new FormatError(INVALIDE);
-  return nettoyerClasseur(feuille);
+  const classeur = nettoyerClasseur(feuille);
+  if (classeur.media) {
+    // Les sons et vidéos : on ne lit que dans l'archive ; celui dont le fichier manque est retiré.
+    const media: Record<string, MediaCell> = {};
+    for (const [adresse, m] of Object.entries(classeur.media)) {
+      if (adresseMédiaValide(m.src)) {
+        media[adresse] = m;
+        continue;
+      }
+      const données = fichiers[m.src];
+      const mime = mimeDeMédiaParExt(m.src.split('.').pop() ?? '');
+      if (données && mime) media[adresse] = { ...m, src: bytesToDataUrl(données, mime) };
+    }
+    if (Object.keys(media).length) classeur.media = media;
+    else delete classeur.media;
+  }
+  return classeur;
 }

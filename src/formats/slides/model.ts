@@ -1,3 +1,5 @@
+import { depuisJsonCompact, enJsonCompact, type GenreMédia } from '../../shared/media';
+
 export const SLIDE_W = 960;
 export const SLIDE_H = 540;
 export const MAX_SLIDES = 500;
@@ -49,7 +51,19 @@ export interface ImageObject extends ObjetDeBase {
   alt: string;
 }
 
-export type SlideObject = TextObject | ShapeObject | ImageObject;
+/** Un son ou une vidéo : lu par un lecteur pendant la présentation. */
+export interface MediaObject extends ObjetDeBase {
+  type: 'media';
+  kind: GenreMédia;
+  /** Adresse « data: » du fichier pendant l'édition ; « media/… » dans le fichier. */
+  src: string;
+  title: string;
+}
+
+export type SlideObject = TextObject | ShapeObject | ImageObject | MediaObject;
+
+/** Vrai pour les objets qui portent du texte (zone de texte, forme). */
+export const aDuTexte = (o: SlideObject): o is TextObject | ShapeObject => o.type === 'text' || o.type === 'shape';
 
 export interface Slide {
   id: string;
@@ -116,7 +130,7 @@ export const présentationParDéfaut = (): SlidesDoc => ({ slides: [nouvelleDiap
 
 /** Copie profonde avec de nouveaux identifiants (dupliquer une diapositive ou un objet). */
 export function cloner<T extends Slide | SlideObject>(élément: T): T {
-  const copie = JSON.parse(JSON.stringify(élément)) as T;
+  const copie = depuisJsonCompact<T>(enJsonCompact(élément));
   copie.id = nouvelId();
   if ('objects' in copie) for (const o of copie.objects) o.id = nouvelId();
   return copie;
@@ -128,16 +142,16 @@ export class Historique<T> {
   private position = 0;
 
   constructor(initial: T, private readonly max = 100) {
-    this.instantanés = [JSON.stringify(initial)];
+    this.instantanés = [enJsonCompact(initial)];
   }
 
   reset(valeur: T): void {
-    this.instantanés = [JSON.stringify(valeur)];
+    this.instantanés = [enJsonCompact(valeur)];
     this.position = 0;
   }
 
   commit(valeur: T): boolean {
-    const instantané = JSON.stringify(valeur);
+    const instantané = enJsonCompact(valeur);
     if (instantané === this.instantanés[this.position]) return false;
     this.instantanés = [...this.instantanés.slice(0, this.position + 1), instantané].slice(-this.max);
     this.position = this.instantanés.length - 1;
@@ -148,10 +162,10 @@ export class Historique<T> {
   canRedo = (): boolean => this.position < this.instantanés.length - 1;
 
   undo(): T | null {
-    return this.canUndo() ? (JSON.parse(this.instantanés[--this.position]) as T) : null;
+    return this.canUndo() ? depuisJsonCompact<T>(this.instantanés[--this.position]) : null;
   }
 
   redo(): T | null {
-    return this.canRedo() ? (JSON.parse(this.instantanés[++this.position]) as T) : null;
+    return this.canRedo() ? depuisJsonCompact<T>(this.instantanés[++this.position]) : null;
   }
 }

@@ -1,3 +1,5 @@
+import type { GenreMédia } from '../../shared/media';
+
 export type NumberFormat = 'general' | 'int' | 'dec2' | 'percent' | 'eur';
 export type Alignment = 'left' | 'center' | 'right';
 
@@ -13,6 +15,14 @@ export interface CellStyle {
   n?: NumberFormat;
 }
 
+/** Un son ou une vidéo rattaché à une cellule. */
+export interface MediaCell {
+  kind: GenreMédia;
+  title: string;
+  /** Adresse « data: » du fichier pendant l'édition ; « media/… » dans le fichier. */
+  src: string;
+}
+
 /**
  * Un classeur d'une feuille. Seul ce que l'utilisateur a saisi est enregistré (texte, nombres, formules),
  * jamais les résultats : ils se recalculent à l'ouverture.
@@ -25,8 +35,12 @@ export interface SheetDoc {
   styles: Record<string, CellStyle>;
   /** Numéro de colonne (à partir de 0) → largeur en pixels. */
   colWidths: Record<string, number>;
+  /** Adresse « A1 » → son ou vidéo de la cellule (absent quand il n'y en a pas). */
+  media?: Record<string, MediaCell>;
 }
 
+/** Nombre maximal de sons et de vidéos dans un classeur. */
+export const MAX_MEDIA = 20;
 export const DEFAULT_ROWS = 200;
 export const DEFAULT_COLS = 26;
 export const MAX_ROWS = 20000;

@@ -8,6 +8,7 @@ import {
   Circle,
   Copy,
   CopyPlus,
+  Film,
   Image as IcôneImage,
   Italic,
   Layers,
@@ -25,9 +26,10 @@ import {
   Undo2,
 } from 'lucide';
 import { slidesCodec } from '../../formats/slides';
-import { Historique, cloner, forme, nouvelleDiapo, présentationParDéfaut, zoneDeTexte, SLIDE_H, SLIDE_W, type Layout, type SlidesDoc, type TextStyle } from '../../formats/slides/model';
+import { Historique, aDuTexte, cloner, forme, nouvelleDiapo, présentationParDéfaut, zoneDeTexte, SLIDE_H, SLIDE_W, type Layout, type SlidesDoc, type TextStyle } from '../../formats/slides/model';
 import type { Bridge, MenuAction, OpenedFile } from '../../shared/bridge';
 import type { AppSession } from '../app-session';
+import { choisirMédia } from '../ui/media-picker';
 import { DocumentController, type Notice } from '../document-controller';
 import { IMAGE_MAX_BYTES, lireEnAdresse } from '../editor/create-editor';
 import { fr } from '../fr';
@@ -197,16 +199,16 @@ export function créerSessionPrésentation(hôte: HTMLElement, bridge: Bridge, o
   const objet = () => scène.objetSélectionné();
   const avecTexte = () => {
     const o = objet();
-    return !!o && o.type !== 'image';
+    return !!o && aDuTexte(o);
   };
   const avecFormeSeulement = () => objet()?.type === 'shape';
   const style = (): TextStyle | null => {
     const o = objet();
-    return o && o.type !== 'image' ? o.style : null;
+    return o && aDuTexte(o) ? o.style : null;
   };
   const styliser = (patch: Partial<TextStyle>) =>
     scène.modifier((o) => {
-      if (o.type !== 'image') Object.assign(o.style, patch);
+      if (aDuTexte(o)) Object.assign(o.style, patch);
     });
 
   const g1 = groupe();
@@ -234,6 +236,7 @@ export function créerSessionPrésentation(hôte: HTMLElement, bridge: Bridge, o
   bouton(g3, 'slides:insert-rect', Square, fr.slides.toolbar.insertRect);
   bouton(g3, 'slides:insert-ellipse', Circle, fr.slides.toolbar.insertEllipse);
   bouton(g3, 'slides:insert-image', IcôneImage, fr.slides.toolbar.insertImage);
+  bouton(g3, 'slides:insert-media', Film, fr.slides.toolbar.insertMedia);
 
   const g4 = groupe();
   const taille = el('select', 'tb-select sl-size');
@@ -348,17 +351,21 @@ export function créerSessionPrésentation(hôte: HTMLElement, bridge: Bridge, o
     const aide = el('div', 'present-hint', fr.slides.present.hint);
     surcouche.append(zone, compteur, aide);
     let plein = false;
-    const afficher = () => {
+    // Changer la taille de la fenêtre ne redessine pas la diapositive : un son ou une vidéo en cours ne doit pas repartir de zéro.
+    const ajuster = () => {
       const échelle = Math.min(window.innerWidth / SLIDE_W, window.innerHeight / SLIDE_H);
-      const rendu = rendreDiapo(doc.slides[i]);
-      rendu.style.transform = `scale(${échelle})`;
+      const rendu = zone.firstElementChild as HTMLElement | null;
+      if (rendu) rendu.style.transform = `scale(${échelle})`;
       zone.style.width = `${SLIDE_W * échelle}px`;
       zone.style.height = `${SLIDE_H * échelle}px`;
-      zone.replaceChildren(rendu);
+    };
+    const afficher = () => {
+      zone.replaceChildren(rendreDiapo(doc.slides[i], 'présentation'));
+      ajuster();
       compteur.textContent = fr.slides.present.position(i + 1, doc.slides.length);
     };
     const quitter = () => {
-      window.removeEventListener('resize', afficher);
+      window.removeEventListener('resize', ajuster);
       document.removeEventListener('fullscreenchange', surChangementDePleinÉcran);
       surcouche.remove();
       if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
@@ -386,6 +393,8 @@ export function créerSessionPrésentation(hôte: HTMLElement, bridge: Bridge, o
     }
     surcouche.addEventListener('keydown', (e) => {
       e.stopPropagation();
+      // Les touches d'un lecteur (espace, flèches) sont à lui ; seule Échap quitte toujours la présentation.
+      if ((e.target as HTMLElement).closest('audio, video') && e.key !== 'Escape') return;
       if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key)) suivante();
       else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) précédente();
       else if (e.key === 'Home') {
@@ -398,8 +407,11 @@ export function créerSessionPrésentation(hôte: HTMLElement, bridge: Bridge, o
       else return;
       e.preventDefault();
     });
-    surcouche.addEventListener('click', suivante);
-    window.addEventListener('resize', afficher);
+    surcouche.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('audio, video')) return; // un clic sur un lecteur ne change pas de diapositive
+      suivante();
+    });
+    window.addEventListener('resize', ajuster);
     document.addEventListener('fullscreenchange', surChangementDePleinÉcran);
     document.body.append(surcouche);
     afficher();
@@ -416,6 +428,15 @@ export function créerSessionPrésentation(hôte: HTMLElement, bridge: Bridge, o
     const largeur = Math.round(w * réduction);
     const hauteur = Math.round(h * réduction);
     scène.ajouter({ id: cloner(zoneDeTexte(0, 0, 1, 1, '')).id, type: 'image', x: Math.round((SLIDE_W - largeur) / 2), y: Math.round((SLIDE_H - hauteur) / 2), w: largeur, h: hauteur, src: adresse, alt: '' });
+  }
+
+  async function insérerMédia(): Promise<void> {
+    const média = await choisirMédia(notify);
+    if (!média) return;
+    const vidéo = média.genre === 'video';
+    const largeur = vidéo ? 560 : 420;
+    const hauteur = vidéo ? 315 : 90;
+    scène.ajouter({ id: cloner(zoneDeTexte(0, 0, 1, 1, '')).id, type: 'media', kind: média.genre, x: Math.round((SLIDE_W - largeur) / 2), y: Math.round((SLIDE_H - hauteur) / 2), w: largeur, h: hauteur, src: média.src, title: média.title });
   }
 
   async function gérerMenu(action: MenuAction): Promise<void> {
@@ -510,6 +531,9 @@ export function créerSessionPrésentation(hôte: HTMLElement, bridge: Bridge, o
         break;
       case 'slides:insert-image':
         await insérerImage();
+        break;
+      case 'slides:insert-media':
+        await insérerMédia();
         break;
       case 'slides:bring-front':
         scène.ordonner(true);

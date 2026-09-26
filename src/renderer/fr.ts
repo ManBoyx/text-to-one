@@ -17,7 +17,13 @@ export const fr = {
     noRecent: 'Aucun document récent pour le moment.',
   },
 
-  editor: { label: 'Contenu du document', toolbar: 'Mise en forme' },
+  editor: {
+    label: 'Contenu du document',
+    toolbar: 'Mise en forme',
+    tocTitle: 'Sommaire',
+    noHeadings: 'Aucun titre dans le document : mets des titres (Titre 1, 2 ou 3) pour obtenir un sommaire.',
+    focusExit: 'Quitter le mode concentration',
+  },
 
   themes: {
     title: 'Thèmes',
@@ -78,6 +84,9 @@ export const fr = {
     hr: 'Ligne de séparation',
     pageBreak: 'Saut de page',
     math: 'Formule mathématique (Ctrl+Alt+M)',
+    media: 'Insérer un son ou une vidéo',
+    date: 'Insérer la date du jour (Ctrl+Maj+D)',
+    toc: 'Insérer un sommaire',
     noColor: 'Aucune couleur',
     otherColor: 'Autre couleur…',
   },
@@ -137,6 +146,16 @@ export const fr = {
     empty: 'L’aperçu apparaît ici.',
   },
 
+  media: {
+    title: 'Audio ou vidéo',
+    tooBig: "Ce fichier dépasse 25 Mo : il n'a pas été inséré.",
+    unsupported: "Ce type de fichier n'est pas pris en charge. Formats acceptés : mp3, m4a, aac, ogg, wav, flac, mp4, webm.",
+    untitled: 'Sans titre',
+    play: 'Lire',
+    pause: 'Mettre en pause',
+    placeholder: (genre: 'audio' | 'video', titre: string) => `[${genre === 'video' ? 'vidéo' : 'audio'} : ${titre}]`,
+  },
+
   notice: {
     exported: (nom: string) => `Exporté : ${nom}`,
     imageTooBig: "Cette image dépasse 15 Mo : elle n'a pas été insérée.",
@@ -169,6 +188,7 @@ export const fr = {
       formatDec2: 'Deux décimales',
       formatPercent: 'Pourcentage',
       formatEur: 'Euro',
+      media: 'Son ou vidéo de la cellule',
       insertRow: 'Insérer une ligne au-dessus',
       insertCol: 'Insérer une colonne à gauche',
       deleteRow: 'Supprimer la ligne',
@@ -177,6 +197,14 @@ export const fr = {
       fillDown: 'Recopier vers le bas (Ctrl+D)',
       noColor: 'Aucune couleur',
       otherColor: 'Autre couleur…',
+    },
+    media: {
+      player: 'Lecteur de la cellule',
+      replace: 'Remplacer…',
+      remove: 'Retirer',
+      close: 'Fermer',
+      tooMany: (max: number) => `Un classeur ne peut pas contenir plus de ${max} sons ou vidéos.`,
+      notExported: "Les sons et vidéos ne sont pas inclus dans ce format : ils restent dans le fichier .tts.",
     },
     nameBox: 'Cellule sélectionnée',
     formulaInput: 'Contenu de la cellule : un nombre, du texte, ou une formule qui commence par =',
@@ -205,6 +233,7 @@ export const fr = {
       insertRect: 'Rectangle',
       insertEllipse: 'Ellipse',
       insertImage: 'Insérer une image',
+      insertMedia: 'Insérer un son ou une vidéo',
       size: 'Taille du texte',
       bold: 'Gras (Ctrl+B)',
       italic: 'Italique (Ctrl+I)',

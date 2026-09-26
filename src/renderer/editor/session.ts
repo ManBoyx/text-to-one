@@ -4,6 +4,7 @@ import type { Bridge, MenuAction, OpenedFile } from '../../shared/bridge';
 import { DocumentController, type Notice } from '../document-controller';
 import { fr } from '../fr';
 import { askText } from '../ui/dialog';
+import { choisirMédia } from '../ui/media-picker';
 import { ouvrirFormule } from './math-dialog';
 import { el, icône } from '../ui/dom';
 import { setTheme } from '../ui/theme';
@@ -129,6 +130,8 @@ export function créerSession(hôte: HTMLElement, bridge: Bridge, options: { id?
     setTheme,
     notify,
     askMath: ouvrirFormule,
+    toggleFocus: () => basculerConcentration(),
+    pickMedia: () => choisirMédia(notify),
     print: () => {
       recherche.clear(); // les surlignages de recherche ne doivent pas se retrouver sur le papier
       bridge.print();
@@ -140,6 +143,20 @@ export function créerSession(hôte: HTMLElement, bridge: Bridge, options: { id?
     void runAction('insert:math', éditeur, ui);
   };
   const barreOutils = créerBarreOutils(éditeur, ui);
+
+  // Mode concentration : plus que la feuille ; Échap ou le bouton flottant en sortent.
+  const sortieConcentration = el('button', 'focus-exit', fr.editor.focusExit);
+  sortieConcentration.type = 'button';
+  sortieConcentration.addEventListener('click', () => basculerConcentration());
+  function basculerConcentration(): void {
+    const actif = racine.classList.toggle('is-focus');
+    sortieConcentration.hidden = !actif;
+    éditeur.commands.focus();
+  }
+  sortieConcentration.hidden = true;
+  racine.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && racine.classList.contains('is-focus') && !recherche.element.contains(e.target as Node)) basculerConcentration();
+  });
 
   const contrôleur = new DocumentController<JSONContent>({
     bridge,
@@ -153,7 +170,7 @@ export function créerSession(hôte: HTMLElement, bridge: Bridge, options: { id?
     },
   });
 
-  racine.append(barreOutils.element, recherche.element, espace, barreÉtat);
+  racine.append(barreOutils.element, recherche.element, espace, barreÉtat, sortieConcentration);
   hôte.append(racine);
 
   éditeur.on('update', () => {

@@ -6,6 +6,8 @@ import {
   AlignRight,
   Baseline,
   Bold,
+  CalendarDays,
+  Film,
   Highlighter,
   Image as IcôneImage,
   Italic,
@@ -13,6 +15,7 @@ import {
   List,
   ListOrdered,
   ListTodo,
+  ListTree,
   Minus,
   Printer,
   Quote,
@@ -313,7 +316,10 @@ export function créerBarreOutils(éditeur: Editor, ui: EditorUi): BarreOutils {
     return menu;
   });
   g6.append(boutonTableau);
+  bouton(g6, { action: 'insert:media', icône: Film, titre: fr.toolbar.media });
   bouton(g6, { action: 'insert:math', icône: Sigma, titre: fr.toolbar.math });
+  bouton(g6, { action: 'insert:date', icône: CalendarDays, titre: fr.toolbar.date });
+  bouton(g6, { action: 'insert:toc', icône: ListTree, titre: fr.toolbar.toc });
   bouton(g6, { action: 'insert:hr', icône: Minus, titre: fr.toolbar.hr });
   bouton(g6, { action: 'insert:page-break', icône: SeparatorHorizontal, titre: fr.toolbar.pageBreak });
 

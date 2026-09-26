@@ -3,6 +3,7 @@ import { CharacterCount } from '@tiptap/extensions';
 import { buildExtensions } from '../../shared/schema';
 import type { Notice } from '../document-controller';
 import { fr } from '../fr';
+import { fichiersMédia, lireMédia } from '../ui/media-picker';
 import { Recherche } from './search';
 
 export const EMPTY_DOC: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] };
@@ -36,21 +37,40 @@ export function créerÉditeur(élément: HTMLElement, notify: (notice: Notice) 
         'aria-label': fr.editor.label,
       },
       handlePaste: (_vue, événement) => {
+        const médias = fichiersMédia(événement.clipboardData?.files);
+        if (médias.length) {
+          void insérerMédias(médias, null);
+          return true;
+        }
         const fichiers = imagesDe(événement.clipboardData?.files);
         if (!fichiers.length) return false; // le reste du contenu collé est nettoyé par le schéma
         void insérer(fichiers, null);
         return true;
       },
       handleDrop: (vue, événement) => {
-        const fichiers = imagesDe(événement.dataTransfer?.files);
-        if (!fichiers.length) return false;
+        const médias = fichiersMédia(événement.dataTransfer?.files);
+        const fichiers = médias.length ? [] : imagesDe(événement.dataTransfer?.files);
+        if (!médias.length && !fichiers.length) return false;
         événement.preventDefault();
         const position = vue.posAtCoords({ left: événement.clientX, top: événement.clientY })?.pos ?? null;
-        void insérer(fichiers, position);
+        if (médias.length) void insérerMédias(médias, position);
+        else void insérer(fichiers, position);
         return true;
       },
     },
   });
+
+  async function insérerMédias(fichiers: File[], position: number | null): Promise<void> {
+    let où = position;
+    for (const fichier of fichiers) {
+      const média = await lireMédia(fichier, notify);
+      if (!média) continue;
+      const chaîne = éditeur.chain().focus();
+      if (où !== null) chaîne.setTextSelection(où);
+      chaîne.insertMedia(média.src, média.title).run();
+      où = null;
+    }
+  }
 
   async function insérer(fichiers: File[], position: number | null): Promise<void> {
     let où = position;

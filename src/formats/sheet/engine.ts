@@ -1,7 +1,8 @@
 import { DetailedCellError, HyperFormula, type RawCellContent } from 'hyperformula';
 import frFR from 'hyperformula/i18n/languages/frFR';
 import { shiftReferences } from './formula';
-import { DEFAULT_COL_WIDTH, MAX_COLS, MAX_ROWS, address, emptySheet, parseAddress, type CellStyle, type NumberFormat, type SheetDoc } from './model';
+import { depuisJsonCompact, enJsonCompact } from '../../shared/media';
+import { DEFAULT_COL_WIDTH, MAX_COLS, MAX_ROWS, address, emptySheet, parseAddress, type CellStyle, type MediaCell, type NumberFormat, type SheetDoc } from './model';
 
 if (!HyperFormula.getRegisteredLanguagesCodes().includes('frFR')) HyperFormula.registerLanguage('frFR', frFR);
 
@@ -64,19 +65,20 @@ export class SheetEngine {
   private hf!: HyperFormula;
   private styles = new Map<string, CellStyle>();
   private largeurs = new Map<number, number>();
+  private médias = new Map<string, MediaCell>();
   private historique: string[] = [];
   private position = -1;
 
   constructor(doc: SheetDoc = emptySheet()) {
     this.load(doc);
-    this.historique = [JSON.stringify(this.toDoc())];
+    this.historique = [enJsonCompact(this.toDoc())];
     this.position = 0;
   }
 
   /** Ouvre un autre classeur : le contenu est remplacé et l'historique « annuler » repart de zéro. */
   reset(doc: SheetDoc): void {
     this.load(doc);
-    this.historique = [JSON.stringify(this.toDoc())];
+    this.historique = [enJsonCompact(this.toDoc())];
     this.position = 0;
   }
 
@@ -100,6 +102,7 @@ export class SheetEngine {
     this.cols = Math.min(MAX_COLS, Math.max(doc.cols, dernièreColonne + 1));
     this.styles = new Map(Object.entries(doc.styles ?? {}));
     this.largeurs = new Map(Object.entries(doc.colWidths ?? {}).map(([c, l]) => [Number(c), Number(l)]));
+    this.médias = new Map(Object.entries(doc.media ?? {}).filter(([, m]) => m.src !== ''));
   }
 
   toDoc(): SheetDoc {
@@ -115,7 +118,24 @@ export class SheetEngine {
       cells,
       styles: Object.fromEntries(this.styles),
       colWidths: Object.fromEntries([...this.largeurs].map(([c, l]) => [String(c), l])),
+      ...(this.médias.size ? { media: Object.fromEntries(this.médias) } : {}),
     };
+  }
+
+  // ---------- Sons et vidéos ----------
+
+  media(r: number, c: number): MediaCell | undefined {
+    return this.médias.get(address(r, c));
+  }
+
+  get nombreDeMédias(): number {
+    return this.médias.size;
+  }
+
+  /** Rattache un son ou une vidéo à une cellule (null pour l'enlever). */
+  setMedia(r: number, c: number, média: MediaCell | null): void {
+    if (média) this.médias.set(address(r, c), média);
+    else this.médias.delete(address(r, c));
   }
 
   // ---------- Lecture ----------
@@ -221,14 +241,19 @@ export class SheetEngine {
     this.largeurs = new Map([...this.largeurs].filter(([c]) => c !== à).map(([c, l]) => [c > à ? c - 1 : c, l]));
   }
 
+  /** Les styles et les médias suivent leurs cellules quand des lignes ou des colonnes sont insérées ou supprimées. */
   private décalerStyles(déplacer: (r: number, c: number) => { r: number; c: number } | null): void {
-    const suivants = new Map<string, CellStyle>();
-    for (const [adresse, style] of this.styles) {
-      const a = parseAddress(adresse);
-      const nouvelle = a && déplacer(a.r, a.c);
-      if (nouvelle) suivants.set(address(nouvelle.r, nouvelle.c), style);
-    }
-    this.styles = suivants;
+    const décaler = <T>(source: Map<string, T>): Map<string, T> => {
+      const suivants = new Map<string, T>();
+      for (const [adresse, valeur] of source) {
+        const a = parseAddress(adresse);
+        const nouvelle = a && déplacer(a.r, a.c);
+        if (nouvelle) suivants.set(address(nouvelle.r, nouvelle.c), valeur);
+      }
+      return suivants;
+    };
+    this.styles = décaler(this.styles);
+    this.médias = décaler(this.médias);
   }
 
   // ---------- Copier-coller ----------
@@ -280,7 +305,7 @@ export class SheetEngine {
 
   /** À appeler après chaque action de l'utilisateur : garde un point de retour pour « annuler ». */
   commit(): void {
-    const instantané = JSON.stringify(this.toDoc());
+    const instantané = enJsonCompact(this.toDoc());
     if (instantané === this.historique[this.position]) return;
     this.historique = [...this.historique.slice(0, this.position + 1), instantané].slice(-HISTORIQUE_MAX);
     this.position = this.historique.length - 1;
@@ -296,13 +321,13 @@ export class SheetEngine {
 
   undo(): boolean {
     if (!this.canUndo()) return false;
-    this.load(JSON.parse(this.historique[--this.position]) as SheetDoc);
+    this.load(depuisJsonCompact<SheetDoc>(this.historique[--this.position]));
     return true;
   }
 
   redo(): boolean {
     if (!this.canRedo()) return false;
-    this.load(JSON.parse(this.historique[++this.position]) as SheetDoc);
+    this.load(depuisJsonCompact<SheetDoc>(this.historique[++this.position]));
     return true;
   }
 }

@@ -9,6 +9,7 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { TextStyleKit } from '@tiptap/extension-text-style';
 import { StarterKit } from '@tiptap/starter-kit';
 import { LineSpacing } from './line-spacing';
+import { Media } from './media';
 import { MathBlock, MathInline, type OptionsMath } from './math';
 import { PageBreak } from './page-break';
 
@@ -32,6 +33,7 @@ export function buildExtensions(math: OptionsMath = {}): Extensions {
     PageBreak,
     MathInline.configure(math),
     MathBlock.configure(math),
+    Media,
     TaskList,
     TaskItem.configure({
       nested: true,

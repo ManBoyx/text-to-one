@@ -1,4 +1,4 @@
-import { SLIDE_H, SLIDE_W, cloner, type Slide, type SlideObject } from '../../formats/slides/model';
+import { SLIDE_H, SLIDE_W, aDuTexte, cloner, type Slide, type SlideObject } from '../../formats/slides/model';
 import { el } from '../ui/dom';
 import { nœudDeTexte, placerObjet, rendreObjet } from './render';
 
@@ -40,7 +40,7 @@ export class Scène {
     this.toile.addEventListener('pointerdown', (e) => this.surPointeur(e));
     this.toile.addEventListener('dblclick', (e) => {
       const objet = (e.target as HTMLElement).closest<HTMLElement>('.obj');
-      if (objet?.dataset.id) this.commencerSaisie(objet.dataset.id);
+      if (objet?.dataset.id && !(e.target as HTMLElement).closest('.media-play')) this.commencerSaisie(objet.dataset.id);
     });
     this.element.addEventListener('keydown', (e) => this.surTouche(e));
   }
@@ -59,7 +59,7 @@ export class Scène {
   dessiner(): void {
     if (!this.diapo) return;
     this.toile.style.background = this.diapo.background;
-    this.toile.replaceChildren(...this.diapo.objects.map(rendreObjet), this.cadreDeSélection);
+    this.toile.replaceChildren(...this.diapo.objects.map((o) => rendreObjet(o, 'édition')), this.cadreDeSélection);
     this.placerSélection();
   }
 
@@ -106,6 +106,13 @@ export class Scène {
     const cible = e.target as HTMLElement;
     if (this.nœudEnSaisie?.contains(cible)) return; // on place le curseur dans le texte
     this.terminerSaisie();
+    // Le bouton lecture d'un son ou d'une vidéo : on sélectionne l'objet, le clic fera le reste.
+    if (cible.closest('.media-play')) {
+      const id = cible.closest<HTMLElement>('.obj')?.dataset.id;
+      if (id) this.sélectionner(id);
+      this.element.focus({ preventScroll: true });
+      return;
+    }
     const poignée = cible.closest<HTMLElement>('.handle')?.dataset.h as Poignée | undefined;
     const objet = cible.closest<HTMLElement>('.obj');
     if (poignée && this.objetSélectionné()) this.commencerGeste(e, poignée);
@@ -166,7 +173,7 @@ export class Scène {
   commencerSaisie(id: string): void {
     const objet = this.diapo?.objects.find((o) => o.id === id);
     const élément = this.élément(id);
-    if (!objet || !élément || objet.type === 'image') return;
+    if (!objet || !élément || !aDuTexte(objet)) return;
     this.sélectionner(id);
     const nœud = nœudDeTexte(élément);
     if (!nœud) return;
@@ -197,7 +204,7 @@ export class Scène {
     const texte = (nœud.textContent ?? '').replace(/\n$/, '');
     nœud.contentEditable = 'false';
     nœud.classList.remove('is-editing');
-    if (objet && objet.type !== 'image' && objet.text !== texte) {
+    if (objet && aDuTexte(objet) && objet.text !== texte) {
       objet.text = texte;
       this.rappels.onChange();
     }

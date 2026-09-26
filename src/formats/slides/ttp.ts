@@ -1,4 +1,5 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { adresseMédiaValide, extDeMédia, genreDeAdresse, mimeDeMédiaParExt } from '../../shared/media';
 import { FormatError } from '../errors';
 import { bytesToDataUrl, dataUrlToBytes, extForMime, mimeForExt } from '../images';
 import { MAX_OBJECTS, MAX_SLIDES, SLIDE_H, SLIDE_W, nouvelId, styleDeTexte, type Align, type Slide, type SlideObject, type SlidesDoc, type TextStyle } from './model';
@@ -51,6 +52,10 @@ function nettoyerObjet(brut: unknown): SlideObject | null {
       style: nettoyerStyle(o.style),
     };
   }
+  if (o.type === 'media' && typeof o.src === 'string') {
+    const genre = o.kind === 'video' ? 'video' : o.kind === 'audio' ? 'audio' : null;
+    return { ...base, type: 'media', kind: genre ?? genreDeAdresse(o.src), src: o.src, title: texte(o.title).slice(0, 200) };
+  }
   if (o.type === 'image' && typeof o.src === 'string') return { ...base, type: 'image', src: o.src, alt: texte(o.alt).slice(0, 500) };
   return null;
 }
@@ -68,12 +73,23 @@ export function nettoyerPrésentation(brut: unknown): SlidesDoc {
 
 /** Écrit une présentation : archive zip avec manifest.json, slides.json et les images dans media/. */
 export function packSlides(doc: SlidesDoc): Uint8Array {
-  const médias: Record<string, Uint8Array> = {};
+  const médias: Record<string, Uint8Array | [Uint8Array, { level: 0 }]> = {};
   const nomParAdresse = new Map<string, string>();
   const réécrit: SlidesDoc = {
     slides: doc.slides.map((d) => ({
       ...d,
       objects: d.objects.map((o) => {
+        if (o.type === 'media' && adresseMédiaValide(o.src)) {
+          let nom = nomParAdresse.get(o.src);
+          if (!nom) {
+            const décodé = dataUrlToBytes(o.src);
+            if (!décodé) return o;
+            nom = `media/${o.kind}-${nomParAdresse.size + 1}.${extDeMédia(décodé.mime)}`;
+            nomParAdresse.set(o.src, nom);
+            médias[nom] = [décodé.bytes, { level: 0 }]; // déjà compressé
+          }
+          return { ...o, src: nom };
+        }
         if (o.type !== 'image' || !o.src.startsWith('data:')) return o;
         let nom = nomParAdresse.get(o.src);
         if (!nom) {
@@ -127,6 +143,12 @@ export function unpackSlides(octets: Uint8Array): SlidesDoc {
     slides: doc.slides.map((d) => ({
       ...d,
       objects: d.objects.flatMap((o): SlideObject[] => {
+        if (o.type === 'media') {
+          if (adresseMédiaValide(o.src)) return [o];
+          const données = o.src.startsWith('media/') ? fichiers[o.src] : undefined;
+          const mime = mimeDeMédiaParExt(o.src.split('.').pop() ?? '');
+          return données && mime ? [{ ...o, src: bytesToDataUrl(données, mime) }] : [];
+        }
         if (o.type !== 'image') return [o];
         if (o.src.startsWith('data:image/')) return [o];
         const données = fichiers[o.src];

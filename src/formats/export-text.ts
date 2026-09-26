@@ -1,9 +1,13 @@
 import type { JSONContent } from '@tiptap/core';
 import { generateHTML } from '@tiptap/html';
+import { genreDeAdresse } from '../shared/media';
 import { formuleEnMathML } from '../shared/math';
 import { buildExtensions } from '../shared/schema';
 
 type Noeud = JSONContent;
+
+/** Ce qu'on écrit à la place d'un son ou d'une vidéo dans un format qui ne peut pas les porter. */
+const repèreMédia = (n: Noeud): string => `[${genreDeAdresse(String(n.attrs?.src ?? '')) === 'video' ? 'vidéo' : 'audio'} : ${String(n.attrs?.title ?? '') || 'sans titre'}]`;
 
 const enfants = (n: Noeud): Noeud[] => n.content ?? [];
 
@@ -49,6 +53,8 @@ function blocTexte(n: Noeud, retrait: string): string[] {
       return enfants(n).flatMap((item, i) => élémentTexte(n, item, i, retrait));
     case 'mathBlock':
       return String(n.attrs?.latex ?? '').split('\n').map((ligne) => retrait + ligne);
+    case 'media':
+      return [retrait + repèreMédia(n)];
     case 'horizontalRule':
       return [`${retrait}---`];
     case 'pageBreak':
@@ -143,6 +149,8 @@ function mdBloc(n: Noeud): string[] {
     case 'orderedList':
     case 'taskList':
       return mdListe(n);
+    case 'media':
+      return [`*${échapperMd(repèreMédia(n))}*`];
     case 'mathBlock':
       return ['$$', ...String(n.attrs?.latex ?? '').split('\n'), '$$'];
     case 'horizontalRule':
