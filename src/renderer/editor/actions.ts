@@ -18,6 +18,8 @@ export interface EditorUi {
   setTheme(thème: Theme): void;
   notify(notice: Notice): void;
   print(): void;
+  /** Ouvre la fenêtre de saisie d'une formule ; null si l'utilisateur annule. */
+  askMath(départ: { latex: string; bloc: boolean; modification: boolean }): Promise<{ latex: string; bloc: boolean } | null>;
 }
 
 /** Ajoute « https:// » quand il manque ; renvoie null si le protocole n'est pas autorisé. */
@@ -49,6 +51,17 @@ async function basculerLien(éditeur: Editor, ui: EditorUi): Promise<void> {
     return;
   }
   éditeur.chain().focus().extendMarkRange('link').setLink({ href: adresse }).run();
+}
+
+/** Remplace la formule sélectionnée, ou insère une nouvelle formule à la sélection. */
+export function modifierOuInsérerFormule(éditeur: Editor, latex: string, bloc: boolean): void {
+  const { selection } = éditeur.state;
+  const noeud = 'node' in selection ? (selection.node as { type: { name: string } } | undefined) : undefined;
+  if (noeud && (noeud.type.name === 'mathInline' || noeud.type.name === 'mathBlock')) {
+    éditeur.chain().focus().insertContentAt({ from: selection.from, to: selection.to }, { type: bloc ? 'mathBlock' : 'mathInline', attrs: { latex } }).run();
+    return;
+  }
+  éditeur.chain().focus().insertMath(latex, bloc).run();
 }
 
 export async function runAction(action: EditorAction, éditeur: Editor, ui: EditorUi): Promise<void> {
@@ -83,6 +96,19 @@ export async function runAction(action: EditorAction, éditeur: Editor, ui: Edit
     case 'insert:hr':
       chaîne().setHorizontalRule().run();
       break;
+    case 'insert:math': {
+      const { selection } = éditeur.state;
+      const noeud = 'node' in selection ? (selection.node as { type: { name: string }; attrs: { latex: string } } | undefined) : undefined;
+      const existante = noeud && (noeud.type.name === 'mathInline' || noeud.type.name === 'mathBlock') ? noeud : null;
+      const texteSélectionné = existante ? '' : éditeur.state.doc.textBetween(selection.from, selection.to, ' ').trim();
+      const résultat = await ui.askMath({
+        latex: existante ? existante.attrs.latex : texteSélectionné,
+        bloc: existante ? existante.type.name === 'mathBlock' : false,
+        modification: existante !== null,
+      });
+      if (résultat) modifierOuInsérerFormule(éditeur, résultat.latex, résultat.bloc);
+      break;
+    }
     case 'insert:page-break':
       chaîne().setPageBreak().run();
       break;

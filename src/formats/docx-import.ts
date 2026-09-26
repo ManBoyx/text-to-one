@@ -2,6 +2,8 @@ import type { JSONContent } from '@tiptap/core';
 import { strFromU8, unzipSync } from 'fflate';
 import { FormatError } from './errors';
 import { bytesToDataUrl, mimeForExt } from './images';
+import { formuleValide } from '../shared/math';
+import { ommlEnLatex, ommlEnTexte } from './omml';
 
 type Noeud = JSONContent;
 type Marque = NonNullable<Noeud['marks']>[number];
@@ -238,6 +240,14 @@ function lireExécution(course: Element, ctx: Contexte, héritées: Marque[]): E
   return sortie;
 }
 
+/** Une formule Word en nœud de formule ; si KaTeX ne la comprend pas, son texte brut, pour ne rien perdre. */
+function formuleImportée(formule: Element, bloc: boolean): EnLigne[] {
+  const latex = ommlEnLatex(formule);
+  if (latex && formuleValide(latex)) return [{ type: bloc ? 'mathBlock' : 'mathInline', attrs: { latex } }];
+  const texte = ommlEnTexte(formule);
+  return texte ? [{ type: 'text', text: texte }] : [];
+}
+
 function lireEnLigne(parent: Element, ctx: Contexte, héritées: Marque[]): EnLigne[] {
   const sortie: EnLigne[] = [];
   for (const c of enfants(parent)) {
@@ -253,6 +263,13 @@ function lireEnLigne(parent: Element, ctx: Contexte, héritées: Marque[]): EnLi
         sortie.push(...lireEnLigne(c, ctx, [...héritées, ...lien]));
         break;
       }
+      case 'oMath':
+        sortie.push(...formuleImportée(c, false));
+        break;
+      // Une formule seule sur sa ligne : Word l'entoure d'un « oMathPara ».
+      case 'oMathPara':
+        for (const formule of enfants(c, 'oMath')) sortie.push(...formuleImportée(formule, true));
+        break;
       // Le suivi des modifications : on garde le texte inséré, on ignore le texte supprimé (« del »).
       case 'ins':
       case 'smartTag':
@@ -309,11 +326,11 @@ function lireParagraphe(p: Element, ctx: Contexte): Élément {
   let courant: Noeud[] = [];
   let coupé = false;
   for (const élément of lireEnLigne(p, ctx, [])) {
-    if (élément.type === '__saut') {
+    if (élément.type === '__saut' || élément.type === 'mathBlock') {
       coupé = true;
       if (courant.length) noeuds.push(fabriquer(fusionnerTextes(courant)));
       courant = [];
-      noeuds.push({ type: 'pageBreak' });
+      noeuds.push(élément.type === 'mathBlock' ? élément : { type: 'pageBreak' });
     } else {
       courant.push(élément);
     }

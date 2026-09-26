@@ -1,3 +1,4 @@
+import 'katex/dist/katex.min.css';
 import './styles/base.css';
 import './styles/sheet.css';
 import './styles/toolbar.css';

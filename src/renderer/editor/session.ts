@@ -4,6 +4,7 @@ import type { Bridge, MenuAction, OpenedFile } from '../../shared/bridge';
 import { DocumentController, type Notice } from '../document-controller';
 import { fr } from '../fr';
 import { askText } from '../ui/dialog';
+import { ouvrirFormule } from './math-dialog';
 import { el, icône } from '../ui/dom';
 import { setTheme } from '../ui/theme';
 import { showNotice } from '../ui/toast';
@@ -69,7 +70,8 @@ export function créerSession(hôte: HTMLElement, bridge: Bridge, options: { id?
   feuille.append(zoneÉditeur);
   espace.append(feuille);
 
-  const éditeur = créerÉditeur(zoneÉditeur, notify);
+  let modifierFormule: (position: number) => void = () => {};
+  const éditeur = créerÉditeur(zoneÉditeur, notify, (position) => modifierFormule(position));
   const recherche = créerBarreRecherche(éditeur);
 
   // Barre d'état : compteurs et zoom
@@ -126,10 +128,16 @@ export function créerSession(hôte: HTMLElement, bridge: Bridge, options: { id?
     zoom: changerZoom,
     setTheme,
     notify,
+    askMath: ouvrirFormule,
     print: () => {
       recherche.clear(); // les surlignages de recherche ne doivent pas se retrouver sur le papier
       bridge.print();
     },
+  };
+  // Un double-clic sur une formule la sélectionne et rouvre la fenêtre de saisie.
+  modifierFormule = (position) => {
+    éditeur.chain().focus().setNodeSelection(position).run();
+    void runAction('insert:math', éditeur, ui);
   };
   const barreOutils = créerBarreOutils(éditeur, ui);
 

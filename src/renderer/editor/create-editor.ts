@@ -21,10 +21,10 @@ export function lireEnAdresse(fichier: File): Promise<string> {
 
 const imagesDe = (liste: FileList | null | undefined): File[] => Array.from(liste ?? []).filter((f) => TYPES_IMAGE.test(f.type));
 
-export function créerÉditeur(élément: HTMLElement, notify: (notice: Notice) => void): Editor {
+export function créerÉditeur(élément: HTMLElement, notify: (notice: Notice) => void, surFormule?: (position: number) => void): Editor {
   const éditeur: Editor = new Editor({
     element: élément,
-    extensions: [...buildExtensions(), CharacterCount, Recherche],
+    extensions: [...buildExtensions({ onEdit: surFormule }), CharacterCount, Recherche],
     content: EMPTY_DOC,
     editorProps: {
       attributes: {

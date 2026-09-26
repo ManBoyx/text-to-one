@@ -151,6 +151,7 @@ export function construireMenu(d: MenuDeps): Menu {
         action('Tableau', 'insert:table'),
         action('Lien…', 'insert:link', { accelerator: 'CmdOrCtrl+K' }),
         action('Ligne de séparation', 'insert:hr'),
+        action('Formule mathématique…', 'insert:math', { accelerator: 'CmdOrCtrl+Alt+M' }),
         action('Saut de page', 'insert:page-break'),
       ],
     },

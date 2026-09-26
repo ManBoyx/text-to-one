@@ -247,3 +247,36 @@
     outline: none;
   }
 }
+
+/* Formules mathématiques (KaTeX) */
+.document .math-inline,
+.document .math-block {
+  white-space: normal;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.document .math-inline {
+  display: inline-block;
+  padding: 0 2px;
+}
+.document .math-block {
+  display: block;
+  margin: 0 0 0.6em;
+  padding: 0.2em 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.document .math-block .katex-display {
+  margin: 0;
+}
+.document .math-inline:hover,
+.document .math-block:hover {
+  background: rgba(36, 86, 214, 0.08);
+}
+.document .math-inline.ProseMirror-selectednode,
+.document .math-block.ProseMirror-selectednode {
+  outline: 2px solid #2456d6;
+}
+.document .katex-error {
+  color: #b42318;
+}

@@ -8,6 +8,7 @@ import {
   ImageRun,
   LevelFormat,
   LineRuleType,
+  Math as MathWord,
   Packer,
   PageBreak as SautDePage,
   Paragraph,
@@ -22,10 +23,11 @@ import {
   type IRunOptions,
 } from 'docx';
 import { dataUrlToBytes, readImageSize } from './images';
+import { formuleEnWord } from './math-docx';
 
 type Noeud = JSONContent;
 type Bloc = Paragraph | Table;
-type EnLigne = TextRun | ExternalHyperlink | ImageRun;
+type EnLigne = TextRun | ExternalHyperlink | ImageRun | MathWord;
 
 const enfants = (n: Noeud): Noeud[] => n.content ?? [];
 
@@ -167,6 +169,12 @@ function imageWord(noeud: Noeud): EnLigne {
   });
 }
 
+/** Une formule en objet mathématique de Word ; si elle n'est pas convertible, son code LaTeX en texte. */
+function formuleWord(noeud: Noeud): EnLigne {
+  const latex = String(noeud.attrs?.latex ?? '');
+  return formuleEnWord(latex) ?? new TextRun(latex);
+}
+
 function enLigne(noeud: Noeud): EnLigne[] {
   const sortie: EnLigne[] = [];
   for (const c of enfants(noeud)) {
@@ -178,6 +186,8 @@ function enLigne(noeud: Noeud): EnLigne[] {
       sortie.push(new TextRun({ break: 1 }));
     } else if (c.type === 'image') {
       sortie.push(imageWord(c));
+    } else if (c.type === 'mathInline') {
+      sortie.push(formuleWord(c));
     }
   }
   return sortie;
@@ -267,6 +277,8 @@ function blocs(noeuds: Noeud[], ctx: Contexte, extra: Partial<IParagraphOptions>
           indent: { left: 720 },
           border: { left: { style: BorderStyle.SINGLE, size: 12, color: 'AAAAAA', space: 8 } },
         });
+      case 'mathBlock':
+        return [new Paragraph({ ...extra, alignment: AlignmentType.CENTER, children: [formuleWord(n)] })];
       case 'codeBlock':
         return [blocDeCode(n, extra)];
       case 'horizontalRule':

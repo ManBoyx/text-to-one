@@ -77,6 +77,7 @@ export const fr = {
     table: 'Tableau',
     hr: 'Ligne de séparation',
     pageBreak: 'Saut de page',
+    math: 'Formule mathématique (Ctrl+Alt+M)',
     noColor: 'Aucune couleur',
     otherColor: 'Autre couleur…',
   },
@@ -122,6 +123,18 @@ export const fr = {
     linkInvalid: "Cette adresse n'est pas autorisée. Utilise http, https, mailto ou tel.",
     ok: 'OK',
     cancel: 'Annuler',
+  },
+
+  math: {
+    title: 'Insérer une formule',
+    editTitle: 'Modifier la formule',
+    intro: 'Écris la formule en LaTeX, par exemple \\frac{a}{b} ou x^2. Dans le texte, tu peux aussi taper $x^2$ directement.',
+    label: 'Formule (LaTeX)',
+    snippets: 'Raccourcis',
+    mode: 'Emplacement',
+    inline: 'Dans le texte',
+    block: 'Sur sa propre ligne',
+    empty: 'L’aperçu apparaît ici.',
   },
 
   notice: {

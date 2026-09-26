@@ -1,5 +1,6 @@
 import type { JSONContent } from '@tiptap/core';
 import { generateHTML } from '@tiptap/html';
+import { formuleEnMathML } from '../shared/math';
 import { buildExtensions } from '../shared/schema';
 
 type Noeud = JSONContent;
@@ -14,6 +15,7 @@ function texteEnLigne(n: Noeud): string {
       if (c.type === 'text') return c.text ?? '';
       if (c.type === 'hardBreak') return '\n';
       if (c.type === 'image') return '';
+      if (c.type === 'mathInline') return String(c.attrs?.latex ?? '');
       return texteEnLigne(c);
     })
     .join('');
@@ -45,6 +47,8 @@ function blocTexte(n: Noeud, retrait: string): string[] {
     case 'orderedList':
     case 'taskList':
       return enfants(n).flatMap((item, i) => élémentTexte(n, item, i, retrait));
+    case 'mathBlock':
+      return String(n.attrs?.latex ?? '').split('\n').map((ligne) => retrait + ligne);
     case 'horizontalRule':
       return [`${retrait}---`];
     case 'pageBreak':
@@ -93,6 +97,7 @@ function mdEnLigne(n: Noeud): string {
       if (c.type === 'text') return mdTexte(c);
       if (c.type === 'hardBreak') return '  \n';
       if (c.type === 'image') return `![${échapperMd(String(c.attrs?.alt ?? ''))}]()`;
+      if (c.type === 'mathInline') return `$${String(c.attrs?.latex ?? '')}$`;
       return mdEnLigne(c);
     })
     .join('');
@@ -138,6 +143,8 @@ function mdBloc(n: Noeud): string[] {
     case 'orderedList':
     case 'taskList':
       return mdListe(n);
+    case 'mathBlock':
+      return ['$$', ...String(n.attrs?.latex ?? '').split('\n'), '$$'];
     case 'horizontalRule':
       return ['---'];
     case 'pageBreak':
@@ -169,7 +176,24 @@ ul[data-type=taskList]{list-style:none;padding-left:0}li[data-type=taskItem]{dis
 
 const échapperHtml = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+const dés = (s: string): string => s.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+/** Remplace le code LaTeX de chaque formule par son MathML : la page s'affiche sans feuille de style ni police en plus. */
+function mathMlPourLePapier(html: string): string {
+  return html.replace(/<(span|div)\b((?:[^>"]|"[^"]*")*\bdata-math="(?:inline|block)"(?:[^>"]|"[^"]*")*)>[^<]*<\/\1>/g, (balise: string, _nom: string, attributs: string) => {
+    const mode = /\bdata-math="(inline|block)"/.exec(attributs)?.[1];
+    const latex = /\bdata-latex="([^"]*)"/.exec(attributs)?.[1];
+    if (latex === undefined) return balise;
+    const source = dés(latex);
+    try {
+      return mode === 'block' ? `<div class="math-block" style="text-align:center">${formuleEnMathML(source, true)}</div>` : formuleEnMathML(source, false);
+    } catch {
+      return échapperHtml(source);
+    }
+  });
+}
+
 export function toHtmlDocument(doc: Noeud, title: string): string {
-  const corps = generateHTML(doc, buildExtensions());
+  const corps = mathMlPourLePapier(generateHTML(doc, buildExtensions()));
   return `<!doctype html>\n<html lang="fr">\n<head>\n<meta charset="utf-8">\n<title>${échapperHtml(title)}</title>\n<style>${STYLE_PAGE}</style>\n</head>\n<body>\n${corps}\n</body>\n</html>\n`;
 }

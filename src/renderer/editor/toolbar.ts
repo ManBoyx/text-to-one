@@ -16,6 +16,7 @@ import {
   Minus,
   Printer,
   Quote,
+  Sigma,
   Redo2,
   RemoveFormatting,
   SeparatorHorizontal,
@@ -312,6 +313,7 @@ export function créerBarreOutils(éditeur: Editor, ui: EditorUi): BarreOutils {
     return menu;
   });
   g6.append(boutonTableau);
+  bouton(g6, { action: 'insert:math', icône: Sigma, titre: fr.toolbar.math });
   bouton(g6, { action: 'insert:hr', icône: Minus, titre: fr.toolbar.hr });
   bouton(g6, { action: 'insert:page-break', icône: SeparatorHorizontal, titre: fr.toolbar.pageBreak });
 

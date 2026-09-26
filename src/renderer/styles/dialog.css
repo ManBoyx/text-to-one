@@ -164,3 +164,75 @@
 .theme-contrast.is-warning {
   color: var(--warning);
 }
+
+/* Fenêtre des formules */
+.math-dialog {
+  width: min(560px, calc(100vw - 32px));
+}
+.math-intro {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+.math-input {
+  width: 100%;
+  min-height: 72px;
+  font-family: 'Courier New', Consolas, monospace;
+  resize: vertical;
+}
+.math-snippets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 8px 0;
+}
+.math-snippet {
+  min-width: 34px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  cursor: pointer;
+}
+.math-snippet:hover {
+  border-color: var(--accent);
+}
+.math-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  max-height: 200px;
+  margin: 8px 0;
+  padding: 12px;
+  overflow: auto;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111111;
+}
+.math-placeholder {
+  color: #6b7280;
+}
+.math-error {
+  min-height: 1.3em;
+  margin: 0 0 8px;
+  color: var(--danger, #b42318);
+  font-size: 13px;
+}
+.math-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.math-mode-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

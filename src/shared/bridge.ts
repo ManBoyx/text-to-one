@@ -50,7 +50,7 @@ export type InitialRequest =
 export const MENU_ACTIONS = [
   'file:save', 'file:save-as', 'file:print', 'file:export-docx', 'file:export-html', 'file:export-txt', 'file:export-md', 'file:export-pdf',
   'edit:undo', 'edit:redo', 'edit:find', 'edit:replace',
-  'insert:image', 'insert:table', 'insert:link', 'insert:hr', 'insert:page-break',
+  'insert:image', 'insert:table', 'insert:link', 'insert:hr', 'insert:page-break', 'insert:math',
   'format:bold', 'format:italic', 'format:underline', 'format:strike', 'format:superscript', 'format:subscript',
   'format:align-left', 'format:align-center', 'format:align-right', 'format:align-justify',
   'format:bullet-list', 'format:ordered-list', 'format:task-list', 'format:blockquote', 'format:clear',

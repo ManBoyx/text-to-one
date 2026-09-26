@@ -9,6 +9,7 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { TextStyleKit } from '@tiptap/extension-text-style';
 import { StarterKit } from '@tiptap/starter-kit';
 import { LineSpacing } from './line-spacing';
+import { MathBlock, MathInline, type OptionsMath } from './math';
 import { PageBreak } from './page-break';
 
 /** Seules les images intégrées au document sont acceptées : aucune image distante n'est jamais chargée. */
@@ -19,7 +20,7 @@ const InlineImage = Image.extend({
 });
 
 /** Le schéma du document, partagé par l'éditeur et par tous les convertisseurs de formats. */
-export function buildExtensions(): Extensions {
+export function buildExtensions(math: OptionsMath = {}): Extensions {
   return [
     StarterKit.configure({ link: { openOnClick: false, autolink: true, defaultProtocol: 'https' } }),
     TextStyleKit.configure({ lineHeight: false, backgroundColor: false }),
@@ -29,6 +30,8 @@ export function buildExtensions(): Extensions {
     Superscript,
     LineSpacing,
     PageBreak,
+    MathInline.configure(math),
+    MathBlock.configure(math),
     TaskList,
     TaskItem.configure({
       nested: true,

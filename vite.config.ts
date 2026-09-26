@@ -7,6 +7,7 @@ const racine = fileURLToPath(new URL('.', import.meta.url));
 export default defineConfig({
   root: `${racine}src/renderer`,
   base: './',
-  build: { outDir: `${racine}dist/renderer`, emptyOutDir: true, target: 'esnext' },
+  // Pas d'inclusion en base64 : la politique de sécurité de la page n'autorise les polices que depuis les fichiers (KaTeX en apporte).
+  build: { outDir: `${racine}dist/renderer`, emptyOutDir: true, target: 'esnext', assetsInlineLimit: 0 },
   preview: { port: 4173, strictPort: true },
 });
