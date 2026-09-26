@@ -1,6 +1,7 @@
 import { Menu, type MenuItemConstructorOptions } from 'electron';
 import type { MenuAction, RecentEntry } from '../shared/bridge';
 import type { AppKind } from '../shared/kinds';
+import { PALETTES } from '../shared/themes';
 
 export interface MenuDeps {
   récents: RecentEntry[];
@@ -8,7 +9,6 @@ export interface MenuDeps {
   nouveau(app: AppKind): void;
   ouvrir(): void;
   ouvrirRécent(chemin: string): void;
-  imprimer(): void;
   àPropos(): void;
   codeSource(): void;
   développement: boolean;
@@ -56,11 +56,20 @@ export function construireMenu(d: MenuDeps): Menu {
     { role: 'quit', label: 'Quitter' },
   ];
   const exporter = (éléments: MenuItemConstructorOptions[]): MenuItemConstructorOptions => ({ label: 'Exporter', submenu: éléments });
-  const imprimer: MenuItemConstructorOptions[] = [séparateur, { label: 'Imprimer…', accelerator: 'CmdOrCtrl+P', click: d.imprimer }];
+  const imprimer: MenuItemConstructorOptions[] = [séparateur, action('Imprimer…', 'file:print', { accelerator: 'CmdOrCtrl+P', id: 'file-print' })];
 
   const thème: MenuItemConstructorOptions = {
     label: 'Thème',
-    submenu: [action('Automatique', 'view:theme-system'), action('Clair', 'view:theme-light'), action('Sombre', 'view:theme-dark')],
+    submenu: [
+      action('Automatique', 'view:theme-system'),
+      action('Clair', 'view:theme-light'),
+      action('Sombre', 'view:theme-dark'),
+      séparateur,
+      { label: 'Palettes', submenu: PALETTES.map((p) => action(p.label, `view:theme-${p.id}` as const)) },
+      action('Personnalisé', 'view:theme-custom'),
+      séparateur,
+      action('Tous les thèmes…', 'view:themes'),
+    ],
   };
   const affichage = (avecZoom: boolean): MenuItemConstructorOptions => ({
     label: 'Affichage',

@@ -1,4 +1,5 @@
 import type { AppKind, SaveKind } from './kinds';
+import { THEME_IDS, type ThemeId } from './themes';
 
 export interface OpenedFile {
   path: string;
@@ -47,13 +48,13 @@ export type InitialRequest =
 
 /** Les actions envoyées par les menus natifs à la fenêtre. */
 export const MENU_ACTIONS = [
-  'file:save', 'file:save-as', 'file:export-docx', 'file:export-html', 'file:export-txt', 'file:export-md', 'file:export-pdf',
+  'file:save', 'file:save-as', 'file:print', 'file:export-docx', 'file:export-html', 'file:export-txt', 'file:export-md', 'file:export-pdf',
   'edit:undo', 'edit:redo', 'edit:find', 'edit:replace',
   'insert:image', 'insert:table', 'insert:link', 'insert:hr', 'insert:page-break',
   'format:bold', 'format:italic', 'format:underline', 'format:strike', 'format:superscript', 'format:subscript',
   'format:align-left', 'format:align-center', 'format:align-right', 'format:align-justify',
   'format:bullet-list', 'format:ordered-list', 'format:task-list', 'format:blockquote', 'format:clear',
-  'view:zoom-in', 'view:zoom-out', 'view:zoom-reset', 'view:theme-light', 'view:theme-dark', 'view:theme-system',
+  'view:zoom-in', 'view:zoom-out', 'view:zoom-reset', 'view:theme-light', 'view:theme-dark', 'view:theme-system', 'view:themes',
   'file:export-xlsx', 'file:export-csv', 'file:export-pptx',
   'sheet:insert-row', 'sheet:insert-col', 'sheet:delete-row', 'sheet:delete-col', 'sheet:clear',
   'sheet:format-general', 'sheet:format-int', 'sheet:format-dec2', 'sheet:format-percent', 'sheet:format-eur',
@@ -63,10 +64,14 @@ export const MENU_ACTIONS = [
   'app:save-and-close',
 ] as const;
 
-export type MenuAction = (typeof MENU_ACTIONS)[number];
+/** Les thèmes en plus de « clair », « sombre » et « automatique » : une action par palette, et une pour le thème personnalisé. */
+export type ThemeAction = `view:theme-${ThemeId}`;
+const ACTIONS_THÈME = new Set<string>(THEME_IDS.map((id) => `view:theme-${id}`));
+
+export type MenuAction = (typeof MENU_ACTIONS)[number] | ThemeAction;
 
 export function isMenuAction(valeur: unknown): valeur is MenuAction {
-  return typeof valeur === 'string' && (MENU_ACTIONS as readonly string[]).includes(valeur);
+  return typeof valeur === 'string' && ((MENU_ACTIONS as readonly string[]).includes(valeur) || ACTIONS_THÈME.has(valeur));
 }
 
 /** Le pont préchargé : tout ce que l'interface peut demander au processus principal, rien d'autre. */
@@ -76,6 +81,8 @@ export interface Bridge {
   readRecent(path: string): Promise<OpenOutcome>;
   save(request: SaveRequest): Promise<SaveOutcome>;
   exportPdf(suggestedName: string): Promise<SaveOutcome>;
+  /** Ouvre la boîte d'impression du système pour la fenêtre. */
+  print(): void;
   listRecents(): Promise<RecentEntry[]>;
   setWindowState(state: WindowState): void;
   writeRecovery(id: string, name: string, bytes: Uint8Array, app: AppKind): Promise<void>;

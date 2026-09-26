@@ -39,3 +39,128 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* Fenêtre des thèmes */
+.theme-dialog {
+  width: min(680px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+.theme-intro {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.theme-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.theme-card:hover {
+  border-color: var(--accent);
+}
+.theme-card.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.theme-name {
+  font-weight: 600;
+}
+.theme-hint {
+  margin-top: -4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.theme-preview {
+  display: block;
+  height: 46px;
+  padding: 8px;
+  border: 1px solid;
+  border-radius: 6px;
+}
+.theme-preview-split {
+  display: flex;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-color: var(--border);
+  background: transparent;
+}
+.theme-preview-split > .theme-preview {
+  flex: 1;
+  height: 44px;
+  border: 0;
+  border-radius: 0;
+}
+.theme-preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 6px;
+  border: 1px solid;
+  border-radius: 4px;
+}
+.theme-preview-text {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+}
+.theme-preview-accent {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.theme-custom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  margin: 0 0 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.theme-custom > legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+.theme-custom > .theme-intro,
+.theme-custom > .theme-contrast,
+.theme-custom > .btn {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.theme-color {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.theme-color input {
+  width: 48px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+.theme-contrast {
+  color: var(--muted);
+}
+.theme-contrast.is-warning {
+  color: var(--warning);
+}

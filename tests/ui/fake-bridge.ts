@@ -14,6 +14,7 @@ export interface Journal {
   fermetures: number;
   liens: string[];
   pdf: string[];
+  impressions: number;
 }
 
 /** Installe dans la page un faux pont qui remplace celui du processus principal, et note ce qu'on lui demande. */
@@ -28,7 +29,7 @@ export async function installerFauxPont(page: Page, options: OptionsPont = {}): 
       if (v && Array.isArray(v.bytes)) v.bytes = Uint8Array.from(v.bytes);
       return v;
     };
-    const journal = { enregistrements: [] as any[], états: [] as any[], secours: [] as any[], effacés: [] as string[], fermetures: 0, liens: [] as string[], pdf: [] as string[] };
+    const journal = { enregistrements: [] as any[], états: [] as any[], secours: [] as any[], effacés: [] as string[], fermetures: 0, liens: [] as string[], pdf: [] as string[], impressions: 0 };
     const scénario: any = {
       prochainEnregistrement: { status: 'saved', path: '/docs/essai.tto', name: 'essai.tto' },
       prochaineOuverture: { status: 'cancelled' },
@@ -56,6 +57,9 @@ export async function installerFauxPont(page: Page, options: OptionsPont = {}): 
       exportPdf: async (nom: string) => {
         journal.pdf.push(nom);
         return { status: 'saved', path: `/docs/${nom}`, name: nom };
+      },
+      print: () => {
+        journal.impressions++;
       },
       listRecents: async () => opts.recents ?? [],
       setWindowState: (état: unknown) => {

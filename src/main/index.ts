@@ -41,7 +41,6 @@ async function démarrer(): Promise<void> {
       nouveau: (type) => void créerFenêtre({ type: 'new', app: type }),
       ouvrir: () => void ouvrirDepuisBoîte(),
       ouvrirRécent: (chemin) => void ouvrirChemin(chemin),
-      imprimer: () => void fenêtreCible()?.webContents.print({ printBackground: true }),
       àPropos: () => void afficherÀPropos(),
       codeSource: () => void shell.openExternal(URL_DÉPÔT),
       développement: !app.isPackaged,

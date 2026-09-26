@@ -13,14 +13,13 @@ type Modèle = MenuItemConstructorOptions[];
 function fabriquer(app: AppKind | null) {
   const actions: MenuAction[] = [];
   const nouveaux: AppKind[] = [];
-  const appels = { ouvrir: 0, imprimer: 0, aPropos: 0, codeSource: 0, récent: [] as string[] };
+  const appels = { ouvrir: 0, aPropos: 0, codeSource: 0, récent: [] as string[] };
   const deps: MenuDeps = {
     récents: [{ path: '/docs/a.tto', name: 'a.tto' }],
     envoyer: (a) => actions.push(a),
     nouveau: (t) => nouveaux.push(t),
     ouvrir: () => appels.ouvrir++,
     ouvrirRécent: (c) => appels.récent.push(c),
-    imprimer: () => appels.imprimer++,
     àPropos: () => appels.aPropos++,
     codeSource: () => appels.codeSource++,
     développement: false,
@@ -85,11 +84,14 @@ describe('menus de chaque application', () => {
     }
   });
 
+  it("l'impression passe par la fenêtre (qui retire d'abord les surlignages de recherche)", () => {
+    expect(cliquerTout('text').actions).toContain('file:print');
+  });
+
   it('ouvre les documents récents et les boîtes de dialogue', () => {
     const { appels } = cliquerTout('text');
     expect(appels.ouvrir).toBe(1);
     expect(appels.récent).toEqual(['/docs/a.tto']);
-    expect(appels.imprimer).toBe(1);
     expect(appels.aPropos).toBe(1);
     expect(appels.codeSource).toBe(1);
   });

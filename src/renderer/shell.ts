@@ -6,7 +6,9 @@ import { créerSessionTableur } from './sheet/session';
 import { créerSessionPrésentation } from './slides/session';
 import { fr } from './fr';
 import { montrerAccueil } from './home';
+import { isThemeId } from '../shared/themes';
 import { setTheme } from './ui/theme';
+import { ouvrirThèmes } from './ui/theme-dialog';
 import { showNotice } from './ui/toast';
 
 /** La coquille de la fenêtre : montre l'accueil ou un document, et relaie ce que dit le processus principal. */
@@ -79,9 +81,12 @@ export class Shell {
   }
 
   private async surMenu(action: MenuAction): Promise<void> {
-    if (action === 'view:theme-light') return setTheme('light');
-    if (action === 'view:theme-dark') return setTheme('dark');
-    if (action === 'view:theme-system') return setTheme('system');
+    if (action === 'view:themes') return ouvrirThèmes();
+    if (action.startsWith('view:theme-')) {
+      const id = action.slice('view:theme-'.length);
+      if (isThemeId(id)) setTheme(id);
+      return;
+    }
     await this.session?.handleMenu(action);
   }
 }

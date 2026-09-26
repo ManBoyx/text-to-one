@@ -8,6 +8,7 @@ export interface FakeBridge extends Bridge {
   cleared: string[];
   pdfs: string[];
   closed: number;
+  prints: number;
   nextSave: SaveOutcome;
   nextPdf: SaveOutcome;
 }
@@ -20,6 +21,7 @@ export function createFakeBridge(): FakeBridge {
     cleared: [],
     pdfs: [],
     closed: 0,
+    prints: 0,
     nextSave: { status: 'saved', path: '/docs/essai.tto', name: 'essai.tto' },
     nextPdf: { status: 'saved', path: '/docs/essai.pdf', name: 'essai.pdf' },
     init: async () => null,
@@ -32,6 +34,9 @@ export function createFakeBridge(): FakeBridge {
     exportPdf: async (nom) => {
       pont.pdfs.push(nom);
       return pont.nextPdf;
+    },
+    print: () => {
+      pont.prints++;
     },
     listRecents: async () => [],
     setWindowState: (état) => {

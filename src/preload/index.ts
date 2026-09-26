@@ -9,6 +9,7 @@ const pont: Bridge = {
   readRecent: (chemin) => ipcRenderer.invoke(IPC.readRecent, chemin),
   save: (demande) => ipcRenderer.invoke(IPC.save, demande),
   exportPdf: (nom) => ipcRenderer.invoke(IPC.exportPdf, nom),
+  print: () => ipcRenderer.send(IPC.print),
   listRecents: () => ipcRenderer.invoke(IPC.listRecents),
   setWindowState: (état) => ipcRenderer.send(IPC.windowState, état),
   writeRecovery: (id, nom, octets, app) => ipcRenderer.invoke(IPC.writeRecovery, id, nom, octets, app),

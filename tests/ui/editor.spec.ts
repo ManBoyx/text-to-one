@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { GIF_1PX, PNG_1PX } from '../formats/sample-doc';
-import { envoyerMenu, installerFauxPont } from './fake-bridge';
+import { envoyerMenu, installerFauxPont, journal } from './fake-bridge';
 
 async function ouvrirÉditeur(page: Page) {
   await installerFauxPont(page, { init: { type: 'new' } });
@@ -124,6 +124,16 @@ test.describe('éditeur', () => {
     await expect(zone.locator('a[href^="javascript"]')).toHaveCount(0);
     expect(await page.evaluate(() => (window as any).__pirate)).toBeUndefined();
     expect(externes).toEqual([]);
+  });
+
+  test("l'icône d'impression ouvre l'impression, sans surlignage de recherche", async ({ page }) => {
+    await ouvrirÉditeur(page);
+    await page.locator('.ProseMirror').click();
+    await page.keyboard.type('bonjour');
+    await page.locator('[data-action="file:print"]').click();
+    expect((await journal(page)).impressions).toBe(1);
+    await envoyerMenu(page, 'file:print'); // le menu natif passe par la même voie
+    expect((await journal(page)).impressions).toBe(2);
   });
 
   test('zoom et compteurs', async ({ page }) => {

@@ -121,7 +121,7 @@ test("n'expose que le pont prévu à la page (pas d'accès à Node)", async () =
   expect(exposé.require).toBe('undefined');
   expect(exposé.process).toBe('undefined');
   expect(exposé.fonctions).toEqual(
-    ['clearRecovery', 'closeWindow', 'exportPdf', 'init', 'listRecents', 'onMenu', 'onOpenRequest', 'openDialog', 'openExternal', 'readRecent', 'save', 'setWindowState', 'writeRecovery'].sort(),
+    ['clearRecovery', 'closeWindow', 'exportPdf', 'init', 'listRecents', 'onMenu', 'onOpenRequest', 'openDialog', 'openExternal', 'print', 'readRecent', 'save', 'setWindowState', 'writeRecovery'].sort(),
   );
   await app.close();
 });

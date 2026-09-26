@@ -155,6 +155,10 @@ export function enregistrerIpc(ctx: ContexteIpc): void {
     return { status: 'saved', path: chemin, name: basename(chemin) };
   });
 
+  ipcMain.on(IPC.print, (événement) => {
+    fenêtreDe(événement).fenêtre.webContents.print({ printBackground: true });
+  });
+
   ipcMain.handle(IPC.listRecents, (événement) => {
     fenêtreDe(événement);
     return ctx.recents.entries();

@@ -14,6 +14,7 @@ import {
   ListOrdered,
   ListTodo,
   Minus,
+  Printer,
   Quote,
   Redo2,
   RemoveFormatting,
@@ -170,6 +171,7 @@ export function créerBarreOutils(éditeur: Editor, ui: EditorUi): BarreOutils {
   const g1 = groupe();
   const annuler = bouton(g1, { action: 'edit:undo', icône: Undo2, titre: fr.toolbar.undo });
   const rétablir = bouton(g1, { action: 'edit:redo', icône: Redo2, titre: fr.toolbar.redo });
+  bouton(g1, { action: 'file:print', icône: Printer, titre: fr.toolbar.print });
   àActualiser.push(() => {
     annuler.disabled = !éditeur.can().undo();
     rétablir.disabled = !éditeur.can().redo();

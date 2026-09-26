@@ -126,6 +126,10 @@ export function créerSession(hôte: HTMLElement, bridge: Bridge, options: { id?
     zoom: changerZoom,
     setTheme,
     notify,
+    print: () => {
+      recherche.clear(); // les surlignages de recherche ne doivent pas se retrouver sur le papier
+      bridge.print();
+    },
   };
   const barreOutils = créerBarreOutils(éditeur, ui);
 

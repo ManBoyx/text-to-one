@@ -5,10 +5,10 @@ import { fr } from '../fr';
 import type { Theme } from '../ui/theme';
 
 /** Les actions que l'éditeur sait faire ; les menus natifs et la barre d'outils passent par les mêmes. */
-export type EditorAction = Extract<MenuAction, `edit:${string}` | `insert:${string}` | `format:${string}` | `view:${string}`>;
+export type EditorAction = Extract<MenuAction, `edit:${string}` | `insert:${string}` | `format:${string}` | `view:${string}` | 'file:print'>;
 
 /** Les actions du traitement de texte ; les autres (tableur, présentations) ne le concernent pas. */
-export const isEditorAction = (action: MenuAction): action is EditorAction => /^(edit|insert|format|view):/.test(action);
+export const isEditorAction = (action: MenuAction): action is EditorAction => /^(edit|insert|format|view):/.test(action) || action === 'file:print';
 
 export interface EditorUi {
   askText(options: { title: string; label: string; value?: string }): Promise<string | null>;
@@ -17,6 +17,7 @@ export interface EditorUi {
   zoom(changement: number | 'reset'): void;
   setTheme(thème: Theme): void;
   notify(notice: Notice): void;
+  print(): void;
 }
 
 /** Ajoute « https:// » quand il manque ; renvoie null si le protocole n'est pas autorisé. */
@@ -53,6 +54,9 @@ async function basculerLien(éditeur: Editor, ui: EditorUi): Promise<void> {
 export async function runAction(action: EditorAction, éditeur: Editor, ui: EditorUi): Promise<void> {
   const chaîne = () => éditeur.chain().focus();
   switch (action) {
+    case 'file:print':
+      ui.print();
+      break;
     case 'edit:undo':
       chaîne().undo().run();
       break;

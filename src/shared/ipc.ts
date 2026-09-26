@@ -5,6 +5,7 @@ export const IPC = {
   readRecent: 'tto:read-recent',
   save: 'tto:save',
   exportPdf: 'tto:export-pdf',
+  print: 'tto:print',
   listRecents: 'tto:list-recents',
   windowState: 'tto:window-state',
   writeRecovery: 'tto:write-recovery',
